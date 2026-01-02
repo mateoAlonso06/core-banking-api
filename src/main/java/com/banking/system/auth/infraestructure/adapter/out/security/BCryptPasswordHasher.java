@@ -1,4 +1,4 @@
-package com.banking.system.auth.infraestructure.security;
+package com.banking.system.auth.infraestructure.adapter.out.security;
 
 import com.banking.system.auth.domain.port.out.PasswordHasher;
 import lombok.RequiredArgsConstructor;

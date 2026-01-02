@@ -18,7 +18,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "customers")
 public class CustomerJpaEntity {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false, unique = true)

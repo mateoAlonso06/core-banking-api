@@ -2,13 +2,15 @@ package com.banking.system.auth.infraestructure.adapter.in.rest;
 
 import com.banking.system.auth.application.dto.LoginCommand;
 import com.banking.system.auth.application.dto.LoginResult;
+import com.banking.system.auth.application.dto.RegisterCommand;
+import com.banking.system.auth.application.dto.RegisterResult;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginResponse;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserResponse;
-import com.banking.system.auth.infraestructure.security.JwtTokenProvider;
+import com.banking.system.auth.infraestructure.adapter.out.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@RequestMapping("api/v1/auth")
 @Validated
 public class AuthRestController {
     private final RegisterUseCase registerUseCase;
@@ -29,7 +31,25 @@ public class AuthRestController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterUserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
-        return null;
+        RegisterCommand command = new RegisterCommand(
+                request.email(),
+                request.password(),
+                request.firstName(),
+                request.lastName(),
+                request.documentType(),
+                request.documentNumber(),
+                request.birthDate(),
+                request.phone()
+        );
+
+        RegisterResult result = registerUseCase.register(command);
+
+        RegisterUserResponse response = new RegisterUserResponse(
+                result.customerId(),
+                result.email()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")

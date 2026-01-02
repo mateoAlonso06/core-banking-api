@@ -6,6 +6,7 @@ public record RegisterCommand(
     String email,
     String password,
     String firstName,
+    String lastName,
     String documentType,
     String documentNumber,
     LocalDate birthDate,

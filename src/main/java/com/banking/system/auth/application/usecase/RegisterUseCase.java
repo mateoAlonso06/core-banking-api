@@ -1,8 +1,8 @@
 package com.banking.system.auth.application.usecase;
 
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserResponse;
+import com.banking.system.auth.application.dto.RegisterCommand;
+import com.banking.system.auth.application.dto.RegisterResult;
 
 public interface RegisterUseCase {
-    RegisterUserResponse register(RegisterUserRequest registerUserRequest);
+    RegisterResult register(RegisterCommand registerUserRequest);
 }
