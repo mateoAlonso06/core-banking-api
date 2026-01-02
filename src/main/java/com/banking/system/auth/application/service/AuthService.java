@@ -1,24 +1,45 @@
 package com.banking.system.auth.application.service;
 
+import com.banking.system.auth.application.dto.LoginCommand;
+import com.banking.system.auth.application.dto.LoginResult;
+import com.banking.system.auth.application.usecase.LoginUseCase;
+import com.banking.system.auth.domain.exception.InvalidCredentalsException;
 import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
+import com.banking.system.auth.domain.exception.UserNotFoundException;
 import com.banking.system.auth.domain.port.out.PasswordHasher;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserResponse;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.domain.port.out.UserRepository;
+import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import com.banking.system.auth.domain.model.User;
 import com.banking.system.customer.domain.model.Customer;
-import com.banking.system.customer.domain.port.out.CustomerRepository;
+import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService implements RegisterUseCase {
-    private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
+public class AuthService implements RegisterUseCase, LoginUseCase {
+    private final UserRepositoryPort userRepository;
+    private final CustomerRepositoryPort customerRepository;
     private final PasswordHasher passwordHasher;
+
+    @Override
+    @Transactional
+    public LoginResult login(LoginCommand loginCommand) {
+        User user = userRepository.findByEmail(loginCommand.email())
+                .orElseThrow(() -> new UserNotFoundException("Invalid credentials"));
+
+        if (!passwordHasher.verify(loginCommand.password(), user.getPasswordHash()))
+            throw new InvalidCredentalsException("Invalid credentials");
+
+        return new LoginResult(
+                user.getId(),
+                user.getEmail(),
+                user.getRole()
+        );
+    }
 
     @Override
     @Transactional
