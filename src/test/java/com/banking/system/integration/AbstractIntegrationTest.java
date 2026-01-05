@@ -11,7 +11,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
-public class AbstractIntegrationTest {
+public abstract class AbstractIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
 
