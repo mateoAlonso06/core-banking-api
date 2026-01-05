@@ -48,19 +48,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
-    public User create(User user) {
+    public User save(User user) {
         UserJpaEntity userJpaEntity = userMapper.toJpaEntity(user);
-
         UserJpaEntity savedEntity = springDataUserRepository.save(userJpaEntity);
 
         return userMapper.toDomain(savedEntity);
-    }
-
-    @Override
-    public void update(User user) {
-        UserJpaEntity entity = userMapper.toJpaEntity(user);
-
-        springDataUserRepository.save(entity);
     }
 
     @Override

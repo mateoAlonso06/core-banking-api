@@ -5,7 +5,6 @@ import lombok.*;
 import java.util.UUID;
 
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
 public class User {
     private UUID id;
@@ -27,13 +26,13 @@ public class User {
         if (email == null || passwordHash == null)
             throw new IllegalArgumentException("Email and passwordHash cannot be null");
 
-        User user = new User();
-        user.id = null; // ID será asignado por JPA
-        user.email = email;
-        user.passwordHash = passwordHash;
-        user.status = UserStatus.PENDING_VERIFICATION; // Default status
-        user.role = Role.CUSTOMER;
-        return user;
+        return new User(
+                null,
+                email,
+                passwordHash,
+                UserStatus.PENDING_VERIFICATION,
+                Role.CUSTOMER
+        );
     }
 
     public void activate() {

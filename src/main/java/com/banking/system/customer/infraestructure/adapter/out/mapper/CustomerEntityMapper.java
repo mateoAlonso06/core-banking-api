@@ -9,5 +9,6 @@ import org.mapstruct.ReportingPolicy;
 public interface CustomerEntityMapper {
     CustomerJpaEntity toEntity(Customer customer);
 
+
     Customer toDomain(CustomerJpaEntity customerJpaEntity);
 }

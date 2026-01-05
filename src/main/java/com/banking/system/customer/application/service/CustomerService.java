@@ -1,11 +1,14 @@
 package com.banking.system.customer.application.service;
 
+import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
 import com.banking.system.customer.application.dto.command.UpdateCustommerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.mapper.CustomerMapper;
+import com.banking.system.customer.application.usecase.CreateCustomerUseCase;
 import com.banking.system.customer.application.usecase.DeleteCustomerUseCase;
 import com.banking.system.customer.application.usecase.GetCustomerUseCase;
 import com.banking.system.customer.application.usecase.UpdateCustomerUseCase;
+import com.banking.system.customer.domain.exception.CustomerAlreadyExistsException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
@@ -18,7 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerService implements GetCustomerUseCase, DeleteCustomerUseCase, UpdateCustomerUseCase {
+public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCase, DeleteCustomerUseCase, UpdateCustomerUseCase {
 
     private final CustomerRepositoryPort customerRepository;
 
@@ -59,5 +62,25 @@ public class CustomerService implements GetCustomerUseCase, DeleteCustomerUseCas
     @Transactional
     public void updateCustomer(UpdateCustommerCommand command) {
 
+    }
+
+    @Override
+    @Transactional
+    public CustomerResult createCustomer(CreateCustomerCommand command) {
+        // Ensures idempotency based on userId
+        if (customerRepository.existsByUserId(command.userId())) {
+            return customerRepository.findByUserId(command.userId())
+                    .map(CustomerMapper::toResult)
+                    .orElseThrow(); // nunca debería pasar
+        }
+
+        if (customerRepository.existsByDocumentNumber(command.documentNumber())) {
+            throw new CustomerAlreadyExistsException("Customer already exists with document number: " + command.documentNumber());
+        }
+
+        Customer customer = CustomerMapper.toDomain(command);
+        Customer customerSaved = customerRepository.save(customer);
+
+        return CustomerMapper.toResult(customerSaved);
     }
 }

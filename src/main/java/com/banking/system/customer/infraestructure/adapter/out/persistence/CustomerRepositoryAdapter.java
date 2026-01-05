@@ -54,4 +54,15 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
     public boolean existsById(UUID id) {
         return springDataCustomerRepository.existsById(id);
     }
+
+    @Override
+    public boolean existsByUserId(UUID id) {
+        return springDataCustomerRepository.existsByUserId(id);
+    }
+
+    @Override
+    public Optional<Customer> findByUserId(UUID id) {
+        Optional<CustomerJpaEntity> entity = springDataCustomerRepository.findByUserId(id);
+        return entity.map(customerEntityMapper::toDomain);
+    }
 }

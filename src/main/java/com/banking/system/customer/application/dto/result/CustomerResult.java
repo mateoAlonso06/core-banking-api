@@ -14,8 +14,6 @@ public record CustomerResult(
     String phone,
     String address,
     String city,
-    String country,
-    String kycStatus,
-    String riskLevel
+    String country
 ) {
 }

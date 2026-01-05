@@ -1,14 +1,9 @@
-package com.banking.system.auth.application.event;
+package com.banking.system.customer.application.dto.command;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * Application Event
- * Represents the fact that a user has been successfully registered.
- * This event is immutable and is published AFTER the transaction commits.
- */
-public record UserRegisteredEvent(
+public record CreateCustomerCommand(
         UUID userId,
         String firstName,
         String lastName,

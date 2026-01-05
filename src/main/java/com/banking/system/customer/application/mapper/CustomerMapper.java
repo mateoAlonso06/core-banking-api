@@ -1,5 +1,6 @@
 package com.banking.system.customer.application.mapper;
 
+import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.domain.model.Customer;
 
@@ -16,9 +17,22 @@ public class CustomerMapper {
                 customer.getPhone(),
                 customer.getAddress(),
                 customer.getCity(),
-                customer.getCountry(),
-                customer.getKycStatus().name(),
-                customer.getRiskLevel().name()
+                customer.getCountry()
+        );
+    }
+
+    public static Customer toDomain(CreateCustomerCommand command) {
+        return Customer.createNewCustomer(
+                command.userId(),
+                command.firstName(),
+                command.lastName(),
+                command.documentType(),
+                command.documentNumber(),
+                command.birthDate(),
+                command.phone(),
+                command.address(),
+                command.city(),
+                command.country()
         );
     }
 }

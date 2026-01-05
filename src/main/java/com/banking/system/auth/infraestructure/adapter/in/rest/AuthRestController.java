@@ -10,7 +10,6 @@ import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginResponse;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserResponse;
-import com.banking.system.auth.infraestructure.adapter.out.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthRestController {
     private final RegisterUseCase registerUseCase;
     private final LoginUseCase loginUseCase;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterUserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
@@ -39,7 +37,10 @@ public class AuthRestController {
                 request.documentType(),
                 request.documentNumber(),
                 request.birthDate(),
-                request.phone()
+                request.phone(),
+                request.address(),
+                request.city(),
+                request.country()
         );
 
         RegisterResult result = registerUseCase.register(command);
@@ -61,16 +62,10 @@ public class AuthRestController {
 
         LoginResult result = loginUseCase.login(command);
 
-        String token = jwtTokenProvider.generateToken(
-                result.id().toString(),
-                result.email(),
-                result.role().name()
-        );
-
         LoginResponse response = new LoginResponse(
                 result.id(),
                 result.email(),
-                token
+                result.token()
         );
 
         return ResponseEntity.ok(response);

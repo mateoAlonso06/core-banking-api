@@ -4,16 +4,16 @@ import com.banking.system.auth.application.dto.LoginCommand;
 import com.banking.system.auth.application.dto.LoginResult;
 import com.banking.system.auth.application.dto.RegisterCommand;
 import com.banking.system.auth.application.dto.RegisterResult;
+import com.banking.system.auth.application.event.publisher.UserEventPublisher;
 import com.banking.system.auth.application.usecase.LoginUseCase;
+import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.InvalidCredentalsException;
 import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
 import com.banking.system.auth.domain.exception.UserNotFoundException;
-import com.banking.system.auth.domain.port.out.PasswordHasher;
-import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import com.banking.system.auth.domain.model.User;
-import com.banking.system.customer.domain.model.Customer;
-import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
+import com.banking.system.auth.domain.port.out.PasswordHasher;
+import com.banking.system.auth.domain.port.out.TokenGenerator;
+import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,60 +21,48 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AuthService implements RegisterUseCase, LoginUseCase {
+
     private final UserRepositoryPort userRepository;
-    private final CustomerRepositoryPort customerRepository;
+    private final UserEventPublisher userEventPublisher;
     private final PasswordHasher passwordHasher;
+    private final TokenGenerator tokenGenerator;
 
     @Override
     @Transactional
-    public LoginResult login(LoginCommand loginCommand) {
-        User user = userRepository.findByEmail(loginCommand.email())
+    public LoginResult login(LoginCommand command) {
+        User user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new UserNotFoundException("Invalid credentials"));
 
-        if (!passwordHasher.verify(loginCommand.password(), user.getPasswordHash()))
+        if (!passwordHasher.verify(command.password(), user.getPasswordHash()))
             throw new InvalidCredentalsException("Invalid credentials");
+
+        String token = tokenGenerator.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name()
+        );
 
         return new LoginResult(
                 user.getId(),
                 user.getEmail(),
-                user.getRole()
+                user.getRole(),
+                token
         );
     }
 
     @Override
     @Transactional
-    public RegisterResult register(RegisterCommand registerUserRequest) {
-        if (userRepository.existsByEmail(registerUserRequest.email()))
+    public RegisterResult register(RegisterCommand command) {
+        if (userRepository.existsByEmail(command.email())) {
             throw new UserAlreadyExistsException("Email already in use");
+        }
 
-        if (customerRepository.existsByDocumentNumber(registerUserRequest.documentNumber()))
-            throw new UserAlreadyExistsException("Document number already in use");
+        String hashedPassword = passwordHasher.hash(command.password());
+        User user = User.createNew(command.email(), hashedPassword);
+        User savedUser = userRepository.save(user);
 
-        String hashedPassword = passwordHasher.hash(registerUserRequest.password());
+        userEventPublisher.publishUserRegisteredEvent(savedUser, command);
 
-        User user = User.createNew(registerUserRequest.email(), hashedPassword);
-
-        User savedUser = userRepository.create(user);
-
-        // Crear Customer con validación de dominio
-        Customer customer = Customer.createNew(
-                savedUser.getId(),
-                registerUserRequest.firstName(),
-                registerUserRequest.lastName(),
-                registerUserRequest.documentType(),
-                registerUserRequest.documentNumber(),
-                registerUserRequest.birthDate(),
-                registerUserRequest.phone(),
-                java.time.LocalDate.now(),
-                Customer.KycStatus.PENDING,
-                Customer.RiskLevel.LOW
-        );
-
-        Customer savedCustomer = customerRepository.save(customer);
-
-        return new RegisterResult(
-                savedCustomer.getId(),
-                savedUser.getEmail()
-        );
+        return new RegisterResult(savedUser.getId(), savedUser.getEmail());
     }
 }

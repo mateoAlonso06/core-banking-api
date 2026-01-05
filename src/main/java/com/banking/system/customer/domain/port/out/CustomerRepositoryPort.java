@@ -2,6 +2,7 @@ package com.banking.system.customer.domain.port.out;
 
 import com.banking.system.customer.domain.model.Customer;
 
+import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,4 +19,8 @@ public interface CustomerRepositoryPort {
     boolean existsByDocumentNumber(String documentNumber);
 
     boolean existsById(UUID id);
+
+    boolean existsByUserId(UUID uuid);
+
+    Optional<Customer> findByUserId(UUID uuid);
 }

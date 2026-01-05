@@ -7,6 +7,7 @@ import java.util.UUID;
 public record LoginResult(
         UUID id,
         String email,
-        Role role
+        Role role,
+        String token
 ) {
 }
