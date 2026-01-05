@@ -46,7 +46,7 @@ public class AuthRestController {
         RegisterResult result = registerUseCase.register(command);
 
         RegisterUserResponse response = new RegisterUserResponse(
-                result.customerId(),
+                result.id(),
                 result.email()
         );
 
