@@ -1,8 +1,11 @@
 package com.banking.system.customer.application.mapper;
 
 import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
+import com.banking.system.customer.application.dto.command.UpdateCustommerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.domain.model.Customer;
+
+import java.util.UUID;
 
 public class CustomerMapper {
     public static CustomerResult toResult(Customer customer) {

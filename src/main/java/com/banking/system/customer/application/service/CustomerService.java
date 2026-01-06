@@ -60,8 +60,28 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
 
     @Override
     @Transactional
-    public void updateCustomer(UpdateCustommerCommand command) {
+    public void updateCustomer(UUID id, UpdateCustommerCommand command) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
 
+        Customer updatedCustomer = new Customer(
+                customer.getId(),
+                customer.getUserId(),
+                command.firstName(),
+                command.lastName(),
+                command.documentType(),
+                command.documentNumber(),
+                command.birthDate(),
+                command.phone(),
+                command.address(),
+                command.city(),
+                command.country(),
+                customer.getCustomerSince(),
+                customer.getKycStatus(),
+                customer.getRiskLevel()
+        );
+
+        customerRepository.save(updatedCustomer);
     }
 
     @Override
