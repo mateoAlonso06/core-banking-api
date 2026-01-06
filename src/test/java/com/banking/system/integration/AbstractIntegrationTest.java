@@ -1,5 +1,6 @@
 package com.banking.system.integration;
 
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -10,7 +11,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Separamos una clase abstracta base para centralizar la infraestructura de testing y evitar duplicación, inconsistencias y drift de configuración.
 public abstract class AbstractIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";
