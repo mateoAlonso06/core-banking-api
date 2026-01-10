@@ -1,5 +1,7 @@
 package com.banking.system.common.domain;
 
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -7,6 +9,7 @@ import java.math.RoundingMode;
  * Money represents a monetary value with a fixed currency.
  * It enforces rounding and currency consistency rules.
  */
+@Getter
 public final class Money {
 
     private static final int SCALE = 2;

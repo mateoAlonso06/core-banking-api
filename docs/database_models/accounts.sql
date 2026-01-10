@@ -1,6 +1,5 @@
 -- Tipos de cuenta
 CREATE TYPE account_type AS ENUM ('SAVINGS', 'CHECKING', 'INVESTMENT');
-CREATE TYPE currency_code AS ENUM ('ARS', 'USD', 'EUR');
 CREATE TYPE account_status AS ENUM ('ACTIVE', 'BLOCKED', 'CLOSED');
 
 -- Cuenta bancaria
@@ -15,7 +14,7 @@ CREATE TABLE accounts
 
     -- Tipo y estado
     account_type           account_type       NOT NULL,
-    currency               currency_code      NOT NULL DEFAULT 'ARS',
+    currency               VARCHAR(2)      NOT NULL DEFAULT 'ARS', -- ISO 4217
     status                 account_status     NOT NULL DEFAULT 'ACTIVE',
 
     -- Saldos (usar NUMERIC para dinero, NUNCA FLOAT)

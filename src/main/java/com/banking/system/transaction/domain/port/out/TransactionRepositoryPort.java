@@ -1,5 +1,7 @@
 package com.banking.system.transaction.domain.port.out;
 
-public interface TransactionRepositoryPort {
+import com.banking.system.transaction.domain.model.Transaction;
 
+public interface TransactionRepositoryPort {
+    Transaction save(Transaction transaction);
 }

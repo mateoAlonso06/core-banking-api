@@ -63,20 +63,45 @@ public class Transaction {
         );
     }
 
-    public enum TransactionType {
-        DEPOSIT,
-        WITHDRAWAL,
-        TRANSFER_OUT,
-        TRANSFER_IN,
-        FEE,
-        INTEREST,
-        REVERSAL
+
+    public Transaction markCompleted(Money balanceAfter, Instant executedAt) {
+        if (this.status != TransactionStatus.PENDING) {
+            throw new IllegalStateException("Only " + TransactionStatus.PENDING + " transactions can be marked as completed.");
+        }
+
+        return new Transaction(
+                this.id,
+                this.accountId,
+                this.transactionType,
+                this.amount,
+                balanceAfter,
+                this.description,
+                this.referenceNumber,
+                this.relatedTransactionId,
+                TransactionStatus.COMPLETED,
+                executedAt,
+                this.createdAt
+        );
     }
 
-    public enum TransactionStatus {
-        PENDING,
-        COMPLETED,
-        FAILED,
-        REVERSED
+
+    public Transaction markFailed() {
+        if (this.status == TransactionStatus.COMPLETED) {
+            throw new IllegalStateException("Completed transaction cannot fail");
+        }
+
+        return new Transaction(
+                this.id,
+                this.accountId,
+                this.transactionType,
+                this.amount,
+                this.balanceAfter,
+                this.description,
+                this.referenceNumber,
+                this.relatedTransactionId,
+                TransactionStatus.FAILED,
+                Instant.now(),
+                this.createdAt
+        );
     }
 }
