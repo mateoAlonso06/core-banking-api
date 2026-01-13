@@ -49,8 +49,6 @@ public class UserRegisteredEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void on(UserRegisteredEvent event) {
-        System.out.println("🔥 EVENT RECEIVED AFTER COMMIT");
-
         CreateCustomerCommand command = new CreateCustomerCommand(
                 event.userId(),
                 event.firstName(),

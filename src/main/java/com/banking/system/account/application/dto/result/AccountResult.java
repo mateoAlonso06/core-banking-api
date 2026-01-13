@@ -1,4 +1,4 @@
-package com.banking.system.account.application.dto.resut;
+package com.banking.system.account.application.dto.result;
 
 import com.banking.system.account.domain.model.Account;
 

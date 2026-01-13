@@ -1,7 +1,7 @@
 package com.banking.system.account.application.service;
 
 import com.banking.system.account.application.dto.command.CreateAccountCommand;
-import com.banking.system.account.application.dto.resut.AccountResult;
+import com.banking.system.account.application.dto.result.AccountResult;
 import com.banking.system.account.application.usecase.CreateAccountUseCase;
 import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
 import com.banking.system.account.application.usecase.FindAllAccountUseCase;
