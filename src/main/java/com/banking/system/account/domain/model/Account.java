@@ -1,35 +1,57 @@
 package com.banking.system.account.domain.model;
 
-import com.banking.system.account.domain.port.out.AccountAliasGenerator;
-import com.banking.system.account.domain.port.out.AccountNumberGenerator;
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
 @Getter
-@AllArgsConstructor
 public class Account {
-    private UUID id;
-    private UUID customerId;
-    private AccountNumber accountNumber;
-    private AccountAlias alias;
-    private AccountType accountType;
-    private MoneyCurrency currency;
-    private AccountStatus status;
+    private final UUID id;
+    private final UUID customerId;
+    private final AccountNumber accountNumber;
+    private final AccountAlias alias;
+    private final AccountType accountType;
+    private final MoneyCurrency currency;
+    private final LocalDateTime openedAt;
+
+    // Life cycle and financial fields
     private Money balance;
     private Money availableBalance;
     private Money dailyTransferLimit;
     private Money monthlyWithdrawalLimit;
-    private LocalDateTime openedAt;
+    private AccountStatus status;
     private LocalDateTime closedAt;
-    private Instant createdAt;
-    private Instant updatedAt;
+
+    private Account(UUID id, UUID customerId,
+                    AccountNumber accountNumber,
+                    AccountAlias alias,
+                    AccountType accountType,
+                    MoneyCurrency currency,
+                    AccountStatus status,
+                    Money balance,
+                    Money availableBalance,
+                    Money dailyTransferLimit,
+                    Money monthlyWithdrawalLimit,
+                    LocalDateTime openedAt,
+                    LocalDateTime closedAt) {
+        this.id = id;
+        this.customerId = customerId;
+        this.accountNumber = accountNumber;
+        this.alias = alias;
+        this.accountType = accountType;
+        this.currency = currency;
+        this.status = status;
+        this.balance = balance;
+        this.availableBalance = availableBalance;
+        this.dailyTransferLimit = dailyTransferLimit;
+        this.monthlyWithdrawalLimit = monthlyWithdrawalLimit;
+        this.openedAt = openedAt;
+        this.closedAt = closedAt;
+    }
 
     /**
      * Factory method to create a new Account for initial creation.
@@ -43,11 +65,9 @@ public class Account {
      * - limits use default values from AccountLimits
      * - openedAt set to current time
      *
-     * @param customerId             UUID of the customer owning this account (required)
-     * @param accountType            Type of account (required)
-     * @param currency               Currency for the account (required)
-     * @param accountNumberGenerator Generator for account numbers (required)
-     * @param accountAliasGenerator  Generator for account aliases (required)
+     * @param customerId  UUID of the customer owning this account (required)
+     * @param accountType Type of account (required)
+     * @param currency    Currency for the account (required)
      * @return new Account instance with validated and defaulted fields
      * @throws NullPointerException if any required parameter is null
      */
@@ -55,13 +75,10 @@ public class Account {
             UUID customerId,
             AccountType accountType,
             MoneyCurrency currency,
-            AccountNumberGenerator accountNumberGenerator,
-            AccountAliasGenerator accountAliasGenerator) {
+            AccountNumber accountNumber,
+            AccountAlias alias) {
 
-        validateFields(customerId, accountType, currency, accountNumberGenerator, accountAliasGenerator);
-
-        AccountNumber accountNumber = accountNumberGenerator.generate(accountType);
-        AccountAlias alias = accountAliasGenerator.generate();
+        validateFields(customerId, accountType, currency, accountNumber, alias);
 
         return new Account(
                 null, // id - assigned by persistence
@@ -76,9 +93,7 @@ public class Account {
                 AccountLimits.DEFAULT_DAILY_TRANSFER_LIMIT,
                 AccountLimits.DEFAULT_MONTHLY_WITHDRAWAL_LIMIT,
                 LocalDateTime.now(),
-                null, // closedAt
-                null, // createdAt - assigned by persistence
-                null  // updatedAt - assigned by persistence
+                null
         );
     }
 
@@ -86,12 +101,12 @@ public class Account {
             UUID customerId,
             AccountType accountType,
             MoneyCurrency currency,
-            AccountNumberGenerator accountNumberGenerator,
-            AccountAliasGenerator accountAliasGenerator) {
+            AccountNumber accountNumber,
+            AccountAlias alias) {
         Objects.requireNonNull(customerId, "Customer ID cannot be null");
         Objects.requireNonNull(accountType, "Account type cannot be null");
         Objects.requireNonNull(currency, "Currency cannot be null");
-        Objects.requireNonNull(accountNumberGenerator, "Account number generator cannot be null");
-        Objects.requireNonNull(accountAliasGenerator, "Account alias generator cannot be null");
+        Objects.requireNonNull(accountNumber);
+        Objects.requireNonNull(alias);
     }
 }

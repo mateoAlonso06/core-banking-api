@@ -6,6 +6,7 @@ import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,5 +38,10 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     @Override
     public boolean existsByAlias(AccountAlias alias) {
         return false;
+    }
+
+    @Override
+    public List<Account> findAll(int page, int size) {
+        return List.of();
     }
 }
