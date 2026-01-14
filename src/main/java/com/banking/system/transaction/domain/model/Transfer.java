@@ -21,7 +21,6 @@ public class Transfer {
     private Money feeAmount;
     private String description;
     private UUID feeTransactionId;
-    private Transaction.TransactionStatus status;
     private String idempotencyKey;
     private Instant executedAt;
     private Instant createdAt;
@@ -80,7 +79,6 @@ public class Transfer {
                 Money.of(feeAmount, MoneyCurrency.ofCode(currency)),
                 description,
                 feeTransactionId,
-                Transaction.TransactionStatus.PENDING,
                 idempotencyKey,
                 null,
                 Instant.now()

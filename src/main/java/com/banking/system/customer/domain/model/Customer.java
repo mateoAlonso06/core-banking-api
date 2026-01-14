@@ -121,6 +121,10 @@ public class Customer {
         }
     }
 
+    public boolean isKycApproved() {
+        return this.kycStatus == KycStatus.APPROVED;
+    }
+
     public void approveKyc() {
         if (this.kycStatus != KycStatus.PENDING) {
             throw new IllegalStateException("KYC can only be approved from PENDING");

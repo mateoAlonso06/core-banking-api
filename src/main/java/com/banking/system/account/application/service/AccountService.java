@@ -2,6 +2,8 @@ package com.banking.system.account.application.service;
 
 import com.banking.system.account.application.dto.command.CreateAccountCommand;
 import com.banking.system.account.application.dto.result.AccountResult;
+import com.banking.system.account.application.event.AccountCreatedEvent;
+import com.banking.system.account.application.event.publisher.AccountEventPublisher;
 import com.banking.system.account.application.usecase.CreateAccountUseCase;
 import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
 import com.banking.system.account.application.usecase.FindAllAccountUseCase;
@@ -14,6 +16,7 @@ import com.banking.system.account.domain.port.out.AccountAliasGenerator;
 import com.banking.system.account.domain.port.out.AccountNumberGenerator;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.MoneyCurrency;
+import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +27,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AccountService implements
         CreateAccountUseCase,
         FindAccountByIdUseCase,
@@ -36,23 +38,63 @@ public class AccountService implements
     private final CustomerRepositoryPort customerRepositoryPort;
     private final AccountNumberGenerator accountNumberGenerator;
     private final AccountAliasGenerator accountAliasGenerator;
+    private final AccountEventPublisher accountEventPublisher;
 
     @Override
     @Transactional
     public AccountResult createAccount(CreateAccountCommand command) {
-        if (!customerRepositoryPort.existsById(command.customerId())) {
-            throw new InvalidAccountOwnerException("Customer with ID " + command.customerId() + " not found.");
-        }
+        Customer customer = customerRepositoryPort.findById(command.customerId())
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer with ID " + command.customerId() + " not found."));
+
+        if (!customer.isKycApproved())
+            throw new IllegalStateException("Customer with ID " + command.customerId() + " has not completed KYC.");
 
         // The alias has more potential for collisions, so we generate and check it in a loop
-        var account = createAccountWithUniqueAlias(
+        Account account = this.createAccountWithUniqueAlias(
                 command.customerId(),
                 command.accountType(),
                 MoneyCurrency.ofCode(command.currency())
         );
 
-        var savedAccount = accountRepositoryPort.save(account);
+        Account savedAccount = accountRepositoryPort.save(account);
+        accountEventPublisher.publishAccountCreated(
+                new AccountCreatedEvent(
+                        savedAccount.getId(),
+                        savedAccount.getCustomerId(),
+                        customer.getUserId(),
+                        savedAccount.getCurrency().code(),
+                        savedAccount.getBalance().getValue(),
+                        savedAccount.getAccountNumber(),
+                        savedAccount.getAlias(),
+                        savedAccount.getAccountType(),
+                        savedAccount.getOpenedAt()
+                )
+        );
+
         return AccountResult.fromDomain(savedAccount);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountResult findById(UUID accountId) {
+        var account = accountRepositoryPort.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("Account with ID " + accountId + " not found."));
+
+        return AccountResult.fromDomain(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccountResult> findAll(int page, int size) {
+        if (page < 0 || size <= 0) {
+            throw new IllegalArgumentException("Invalid pagination parameters: page must be >= 0 and size must be > 0.");
+        }
+
+        var accounts = accountRepositoryPort.findAll(page, size);
+
+        return accounts.stream()
+                .map(AccountResult::fromDomain)
+                .toList();
     }
 
     /**
@@ -76,28 +118,5 @@ public class AccountService implements
             }
         }
         throw new AliasGenerationFailedException("Failed to generate unique alias after " + MAX_ALIAS_GENERATION_ATTEMPTS + " attempts");
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public AccountResult findById(UUID accountId) {
-        Account account = accountRepositoryPort.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("Account with ID " + accountId + " not found."));
-
-        return AccountResult.fromDomain(account);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<AccountResult> findAll(int page, int size) {
-        if (page < 0 || size <= 0) {
-            throw new IllegalArgumentException("Invalid pagination parameters: page must be >= 0 and size must be > 0.");
-        }
-
-        List<Account> accounts = accountRepositoryPort.findAll(page, size);
-
-        return accounts.stream()
-                .map(AccountResult::fromDomain)
-                .toList();
     }
 }
