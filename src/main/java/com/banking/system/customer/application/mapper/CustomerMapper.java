@@ -1,41 +1,21 @@
 package com.banking.system.customer.application.mapper;
 
+import com.banking.system.common.domain.Address;
+import com.banking.system.common.domain.IdentityDocument;
+import com.banking.system.common.domain.PersonName;
+import com.banking.system.common.domain.Phone;
 import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
-import com.banking.system.customer.application.dto.command.UpdateCustommerCommand;
-import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.domain.model.Customer;
 
-import java.util.UUID;
-
 public class CustomerMapper {
-    public static CustomerResult toResult(Customer customer) {
-        return new CustomerResult(
-                customer.getId(),
-                customer.getUserId(),
-                customer.getFirstName(),
-                customer.getLastName(),
-                customer.getDocumentType(),
-                customer.getDocumentNumber(),
-                customer.getBirthDate(),
-                customer.getPhone(),
-                customer.getAddress(),
-                customer.getCity(),
-                customer.getCountry()
-        );
-    }
-
     public static Customer toDomain(CreateCustomerCommand command) {
         return Customer.createNewCustomer(
                 command.userId(),
-                command.firstName(),
-                command.lastName(),
-                command.documentType(),
-                command.documentNumber(),
+                new PersonName(command.firstName(), command.lastName()),
+                new IdentityDocument(command.documentNumber(), command.documentType()),
                 command.birthDate(),
-                command.phone(),
-                command.address(),
-                command.city(),
-                command.country()
+                new Phone(command.phone()),
+                new Address(command.address(), command.city(), command.country())
         );
     }
 }

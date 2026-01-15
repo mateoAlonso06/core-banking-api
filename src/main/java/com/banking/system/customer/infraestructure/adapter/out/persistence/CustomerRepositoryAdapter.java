@@ -2,11 +2,9 @@ package com.banking.system.customer.infraestructure.adapter.out.persistence;
 
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
-import com.banking.system.customer.infraestructure.adapter.out.mapper.CustomerEntityMapper;
-import com.banking.system.customer.infraestructure.adapter.out.persistence.entity.CustomerJpaEntity;
+import com.banking.system.customer.infraestructure.adapter.out.mapper.CustomerJpaEntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,27 +15,27 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
     private final SpringDataCustomerRepository springDataCustomerRepository;
-    private final CustomerEntityMapper customerEntityMapper;
 
     @Override
     public List<Customer> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        var pageable = PageRequest.of(page, size);
         return springDataCustomerRepository.findAll(pageable)
-                .map(customerEntityMapper::toDomain)
+                .map(CustomerJpaEntityMapper::toDomainEntity)
                 .toList();
     }
 
     @Override
     public Optional<Customer> findById(UUID id) {
-        Optional<CustomerJpaEntity> entity = springDataCustomerRepository.findById(id);
-        return entity.map(customerEntityMapper::toDomain);
+        var entity = springDataCustomerRepository.findById(id);
+        return entity.map(CustomerJpaEntityMapper::toDomainEntity);
     }
 
     @Override
     public Customer save(Customer customer) {
-        CustomerJpaEntity entityToSave = customerEntityMapper.toEntity(customer);
-        CustomerJpaEntity savedEntity = springDataCustomerRepository.save(entityToSave);
-        return customerEntityMapper.toDomain(savedEntity);
+        var entityToSave = CustomerJpaEntityMapper.toJpaEntity(customer);
+        var savedEntity = springDataCustomerRepository.save(entityToSave);
+
+        return CustomerJpaEntityMapper.toDomainEntity(savedEntity);
     }
 
     @Override
@@ -62,7 +60,7 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
 
     @Override
     public Optional<Customer> findByUserId(UUID id) {
-        Optional<CustomerJpaEntity> entity = springDataCustomerRepository.findByUserId(id);
-        return entity.map(customerEntityMapper::toDomain);
+        var entity = springDataCustomerRepository.findByUserId(id);
+        return entity.map(CustomerJpaEntityMapper::toDomainEntity);
     }
 }

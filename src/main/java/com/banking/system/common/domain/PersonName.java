@@ -21,11 +21,11 @@ public record PersonName(String firstName, String lastName
         }
 
         // Only accept letters (including international characters) for both names
-        if (!firstName.matches("^[\\\\p{L}]+$")) {
+        if (!firstName.matches("^[\\p{L}]+$")) {
             throw new IllegalArgumentException("First name contains invalid characters.");
         }
 
-        if (!lastName.matches("^[\\\\p{L}]+$")) {
+        if (!lastName.matches("^[\\p{L}]+$")) {
             throw new IllegalArgumentException("Last name contains invalid characters.");
         }
     }

@@ -2,10 +2,7 @@ package com.banking.system.customer.infraestructure.adapter.out.persistence.enti
 
 import com.banking.system.customer.domain.model.Customer;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,6 +13,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Table(name = "customers")
 public class CustomerJpaEntity {
 
@@ -32,11 +30,11 @@ public class CustomerJpaEntity {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
-    @Column(name = "document_type", nullable = false, length = 20)
-    private String documentType;
-
     @Column(name = "document_number", nullable = false, unique = true, length = 50)
     private String documentNumber;
+
+    @Column(name = "document_type", nullable = false, length = 20)
+    private String documentType;
 
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
@@ -57,11 +55,11 @@ public class CustomerJpaEntity {
 
     @Column(name = "kyc_status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private Customer.KycStatus kycStatus = Customer.KycStatus.PENDING;
+    private Customer.KycStatus kycStatus;
 
     @Column(name = "risk_level", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private Customer.RiskLevel riskLevel = Customer.RiskLevel.LOW;
+    private Customer.RiskLevel riskLevel;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -71,7 +69,6 @@ public class CustomerJpaEntity {
 
     @PrePersist
     protected void prePersist() {
-        customerSince = LocalDate.now();
         createdAt = Instant.now();
         updatedAt = Instant.now();
     }

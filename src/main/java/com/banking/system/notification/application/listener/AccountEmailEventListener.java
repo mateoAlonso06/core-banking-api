@@ -31,7 +31,7 @@ public class AccountEmailEventListener {
         Customer customer = customerRepositoryPort.findById(event.customerId())
                 .orElseThrow();
 
-        String fullName = customer.getFirstName().concat(" ").concat(customer.getLastName());
+        String fullName = customer.getPersonName().fullName();
 
         accountEmailService.sendEmail(
                 new EmailNotification(
