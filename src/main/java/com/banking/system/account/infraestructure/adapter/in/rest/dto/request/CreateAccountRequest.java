@@ -1,4 +1,13 @@
 package com.banking.system.account.infraestructure.adapter.in.rest.dto.request;
 
-public record CreateAccountRequest() {
+import com.banking.system.account.domain.model.AccountType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record CreateAccountRequest(
+        @NotNull(message = "Account type is required")
+        AccountType accountType,
+        @NotBlank(message = "Currency is required")
+        String currency
+) {
 }

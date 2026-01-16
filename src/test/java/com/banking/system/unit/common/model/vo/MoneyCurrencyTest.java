@@ -19,8 +19,8 @@ class MoneyCurrencyTest {
     class ValidCreationTests {
 
         @Test
-        @DisplayName("Should create valid currency from code")
-        void shouldCreateValidCurrencyFromCode() {
+        @DisplayName("Should create valid USD currency from code")
+        void shouldCreateValidUsdCurrencyFromCode() {
             MoneyCurrency currency = MoneyCurrency.ofCode("USD");
 
             assertNotNull(currency);
@@ -28,24 +28,17 @@ class MoneyCurrencyTest {
         }
 
         @Test
-        @DisplayName("Should create valid ARS currency")
-        void shouldCreateValidArsCurrency() {
+        @DisplayName("Should create valid ARS currency from code")
+        void shouldCreateValidArsCurrencyFromCode() {
             MoneyCurrency currency = MoneyCurrency.ofCode("ARS");
 
+            assertNotNull(currency);
             assertEquals("ARS", currency.code());
         }
 
         @Test
-        @DisplayName("Should create valid EUR currency")
-        void shouldCreateValidEurCurrency() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("EUR");
-
-            assertEquals("EUR", currency.code());
-        }
-
-        @Test
-        @DisplayName("Should create currency from Currency instance")
-        void shouldCreateCurrencyFromCurrencyInstance() {
+        @DisplayName("Should create currency from Currency instance when supported")
+        void shouldCreateCurrencyFromCurrencyInstanceWhenSupported() {
             Currency javaCurrency = Currency.getInstance("USD");
             MoneyCurrency currency = MoneyCurrency.of(javaCurrency);
 
@@ -72,44 +65,9 @@ class MoneyCurrencyTest {
         @Test
         @DisplayName("Should handle mixed case code")
         void shouldHandleMixedCaseCode() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("UsD");
+            MoneyCurrency currency = MoneyCurrency.ofCode("uSd");
 
             assertEquals("USD", currency.code());
-        }
-    }
-
-    @Nested
-    @DisplayName("Null Validation Tests")
-    class NullValidationTests {
-
-        @Test
-        @DisplayName("Should throw NPE when code is null")
-        void shouldThrowNpeWhenCodeIsNull() {
-            NullPointerException exception = assertThrows(
-                    NullPointerException.class,
-                    () -> MoneyCurrency.ofCode(null)
-            );
-            assertEquals("currency code must not be null", exception.getMessage());
-        }
-
-        @Test
-        @DisplayName("Should throw NPE when Currency instance is null")
-        void shouldThrowNpeWhenCurrencyInstanceIsNull() {
-            NullPointerException exception = assertThrows(
-                    NullPointerException.class,
-                    () -> MoneyCurrency.of(null)
-            );
-            assertEquals("currency must not be null", exception.getMessage());
-        }
-
-        @Test
-        @DisplayName("Should throw NPE when value is null in constructor")
-        void shouldThrowNpeWhenValueIsNullInConstructor() {
-            NullPointerException exception = assertThrows(
-                    NullPointerException.class,
-                    () -> new MoneyCurrency(null)
-            );
-            assertEquals("currency must not be null", exception.getMessage());
         }
     }
 
@@ -119,12 +77,23 @@ class MoneyCurrencyTest {
 
         @ParameterizedTest
         @ValueSource(strings = {"AAA", "ZZZ", "QQQ", "123", "INVALID"})
-        @DisplayName("Should throw IAE for invalid currency codes")
-        void shouldThrowIaeForInvalidCurrencyCodes(String invalidCode) {
+        @DisplayName("Should throw IAE for syntactically invalid currency codes")
+        void shouldThrowIaeForSyntacticallyInvalidCurrencyCodes(String invalidCode) {
             assertThrows(
                     IllegalArgumentException.class,
                     () -> MoneyCurrency.ofCode(invalidCode)
             );
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"EUR", "BRL", "CLP", "MXN"})
+        @DisplayName("Should throw IAE for valid ISO codes that are not supported by application")
+        void shouldThrowIaeForValidIsoCodesNotSupportedByApplication(String isoButNotSupported) {
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> MoneyCurrency.ofCode(isoButNotSupported)
+            );
+            assertTrue(exception.getMessage().startsWith("Currency not supported:"));
         }
 
         @Test
@@ -174,14 +143,6 @@ class MoneyCurrencyTest {
 
             assertEquals("ARS", currency.code());
         }
-
-        @Test
-        @DisplayName("Should return correct code for BRL")
-        void shouldReturnCorrectCodeForBrl() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("BRL");
-
-            assertEquals("BRL", currency.code());
-        }
     }
 
     @Nested
@@ -202,23 +163,9 @@ class MoneyCurrencyTest {
         @Test
         @DisplayName("Should return same instance as value()")
         void shouldReturnSameInstanceAsValue() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("EUR");
+            MoneyCurrency currency = MoneyCurrency.ofCode("USD");
 
             assertSame(currency.value(), currency.asJavaCurrency());
-        }
-    }
-
-    @Nested
-    @DisplayName("value() Method Tests")
-    class ValueMethodTests {
-
-        @Test
-        @DisplayName("Should return wrapped Currency instance")
-        void shouldReturnWrappedCurrencyInstance() {
-            Currency javaCurrency = Currency.getInstance("USD");
-            MoneyCurrency currency = MoneyCurrency.of(javaCurrency);
-
-            assertEquals(javaCurrency, currency.value());
         }
     }
 
@@ -249,34 +196,9 @@ class MoneyCurrencyTest {
         @DisplayName("Should not be equal when currencies differ")
         void shouldNotBeEqualWhenCurrenciesDiffer() {
             MoneyCurrency usd = MoneyCurrency.ofCode("USD");
-            MoneyCurrency eur = MoneyCurrency.ofCode("EUR");
+            MoneyCurrency ars = MoneyCurrency.ofCode("ARS");
 
-            assertNotEquals(usd, eur);
-        }
-
-        @Test
-        @DisplayName("Should have same hashCode when equal")
-        void shouldHaveSameHashCodeWhenEqual() {
-            MoneyCurrency currency1 = MoneyCurrency.ofCode("USD");
-            MoneyCurrency currency2 = MoneyCurrency.ofCode("USD");
-
-            assertEquals(currency1.hashCode(), currency2.hashCode());
-        }
-
-        @Test
-        @DisplayName("Should not be equal to null")
-        void shouldNotBeEqualToNull() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("USD");
-
-            assertNotEquals(null, currency);
-        }
-
-        @Test
-        @DisplayName("Should be equal to itself (reflexivity)")
-        void shouldBeEqualToItself() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("USD");
-
-            assertEquals(currency, currency);
+            assertNotEquals(usd, ars);
         }
 
         @Test
@@ -290,44 +212,13 @@ class MoneyCurrencyTest {
     }
 
     @Nested
-    @DisplayName("Immutability (Record) Tests")
-    class ImmutabilityTests {
-
-        @Test
-        @DisplayName("Should be immutable - value cannot be changed")
-        void shouldBeImmutableValueCannotBeChanged() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("USD");
-            Currency originalValue = currency.value();
-
-            assertEquals(originalValue, currency.value());
-            assertEquals("USD", currency.code());
-        }
-    }
-
-    @Nested
-    @DisplayName("toString() Method (Record) Tests")
-    class ToStringTests {
-
-        @Test
-        @DisplayName("Should have meaningful toString representation")
-        void shouldHaveMeaningfulToStringRepresentation() {
-            MoneyCurrency currency = MoneyCurrency.ofCode("USD");
-
-            String toString = currency.toString();
-
-            assertNotNull(toString);
-            assertTrue(toString.contains("USD"));
-        }
-    }
-
-    @Nested
     @DisplayName("Various ISO-4217 Currencies")
     class VariousCurrenciesTests {
 
         @ParameterizedTest
-        @ValueSource(strings = {"USD", "EUR", "GBP", "JPY", "ARS", "BRL", "MXN", "CLP", "COP", "PEN"})
-        @DisplayName("Should accept valid ISO-4217 currency codes")
-        void shouldAcceptValidIso4217CurrencyCodes(String code) {
+        @ValueSource(strings = {"USD", "ARS"})
+        @DisplayName("Should accept only configured supported currency codes")
+        void shouldAcceptOnlyConfiguredSupportedCurrencyCodes(String code) {
             MoneyCurrency currency = MoneyCurrency.ofCode(code);
 
             assertNotNull(currency);

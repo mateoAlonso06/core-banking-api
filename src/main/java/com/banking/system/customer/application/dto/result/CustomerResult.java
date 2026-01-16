@@ -29,7 +29,7 @@ public record CustomerResult(
      * @param customer domain entity with Value Objects
      * @return flat DTO ready for JSON serialization
      */
-    public static CustomerResult from(Customer customer) {
+    public static CustomerResult fromDomain(Customer customer) {
         return new CustomerResult(
                 customer.getId(),
                 customer.getUserId(),

@@ -5,11 +5,11 @@ import com.banking.system.account.domain.model.AccountNumber;
 import com.banking.system.account.domain.model.AccountType;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record AccountCreatedEvent(
-        UUID acconuntId,
+        UUID accountId,
         UUID customerId,
         UUID userId,
         String currency,
@@ -17,6 +17,6 @@ public record AccountCreatedEvent(
         AccountNumber accountNumber,
         AccountAlias alias,
         AccountType accountType,
-        LocalDateTime openedAt
+        LocalDate openedAt
 ) {
 }

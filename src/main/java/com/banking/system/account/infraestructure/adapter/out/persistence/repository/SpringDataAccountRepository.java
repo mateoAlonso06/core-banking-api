@@ -1,4 +1,4 @@
-package com.banking.system.account.infraestructure.adapter.out.persistence;
+package com.banking.system.account.infraestructure.adapter.out.persistence.repository;
 
 import com.banking.system.account.infraestructure.adapter.out.persistence.entity.AccountJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

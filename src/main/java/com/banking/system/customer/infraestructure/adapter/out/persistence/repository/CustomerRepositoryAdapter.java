@@ -1,4 +1,4 @@
-package com.banking.system.customer.infraestructure.adapter.out.persistence;
+package com.banking.system.customer.infraestructure.adapter.out.persistence.repository;
 
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;

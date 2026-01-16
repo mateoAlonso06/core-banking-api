@@ -38,7 +38,7 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
         var customer = customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
 
-        return CustomerResult.from(customer);
+        return CustomerResult.fromDomain(customer);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
         var customers = customerRepository.findAll(page, size);
 
         return customers.stream()
-                .map(CustomerResult::from)
+                .map(CustomerResult::fromDomain)
                 .toList();
     }
 
@@ -61,7 +61,7 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
         // Ensures idempotency based on userId
         if (customerRepository.existsByUserId(command.userId())) {
             return customerRepository.findByUserId(command.userId())
-                    .map(CustomerResult::from)
+                    .map(CustomerResult::fromDomain)
                     .orElseThrow(); // nunca debería pasar
         }
 
@@ -72,6 +72,6 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
         var customer = CustomerMapper.toDomain(command);
         var customerSaved = customerRepository.save(customer);
 
-        return CustomerResult.from(customerSaved);
+        return CustomerResult.fromDomain(customerSaved);
     }
 }

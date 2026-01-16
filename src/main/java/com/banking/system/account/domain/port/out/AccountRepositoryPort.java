@@ -19,4 +19,6 @@ public interface AccountRepositoryPort {
     boolean existsByAlias(AccountAlias alias);
 
     List<Account> findAll(int page, int size);
+
+    boolean existsUsdAccount(UUID customerId);
 }

@@ -4,7 +4,6 @@ import com.banking.system.customer.application.dto.command.UpdateCustommerComman
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.usecase.DeleteCustomerUseCase;
 import com.banking.system.customer.application.usecase.GetCustomerUseCase;
-import com.banking.system.customer.application.usecase.UpdateCustomerUseCase;
 import com.banking.system.customer.infraestructure.adapter.in.rest.dto.request.CustomerUpdateRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +22,6 @@ import java.util.UUID;
 @Validated
 public class CustomerRestController {
     private final GetCustomerUseCase getCustomerUseCase;
-    private final UpdateCustomerUseCase updateCustomerUseCase;
     private final DeleteCustomerUseCase deleteCustomerUseCase;
 
     @GetMapping("/{id}")
@@ -39,24 +36,6 @@ public class CustomerRestController {
                                                                 @RequestParam(required = false, defaultValue = "10") int size) {
         List<CustomerResult> customers = getCustomerUseCase.getAll(page, size);
         return ResponseEntity.ok(customers);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> updateCustomer(@PathVariable @NotNull @Positive UUID id,
-                                                         @RequestBody @Valid CustomerUpdateRequest request) {
-        UpdateCustommerCommand command = new UpdateCustommerCommand(
-                request.firstName(),
-                request.lastName(),
-                request.documentType(),
-                request.documentNumber(),
-                request.birthDate(),
-                request.phone(),
-                request.address(),
-                request.city(),
-                request.country()
-        );
-        updateCustomerUseCase.updateCustomer(id, command);
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

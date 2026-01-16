@@ -14,7 +14,7 @@ CREATE TABLE accounts
 
     -- Tipo y estado
     account_type           account_type       NOT NULL,
-    currency               VARCHAR(2)      NOT NULL DEFAULT 'ARS', -- ISO 4217
+    currency               VARCHAR(3)      NOT NULL DEFAULT 'ARS', -- ISO 4217
     status                 account_status     NOT NULL DEFAULT 'ACTIVE',
 
     -- Saldos (usar NUMERIC para dinero, NUNCA FLOAT)

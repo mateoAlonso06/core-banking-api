@@ -16,7 +16,6 @@ import com.banking.system.account.domain.port.out.AccountAliasGenerator;
 import com.banking.system.account.domain.port.out.AccountNumberGenerator;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.MoneyCurrency;
-import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,15 +42,20 @@ public class AccountService implements
     @Override
     @Transactional
     public AccountResult createAccount(CreateAccountCommand command) {
-        Customer customer = customerRepositoryPort.findById(command.customerId())
-                .orElseThrow(() -> new InvalidAccountOwnerException("Customer with ID " + command.customerId() + " not found."));
+        var customer = customerRepositoryPort.findByUserId(command.userId())
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for user ID " + command.userId()));
 
         if (!customer.isKycApproved())
-            throw new IllegalStateException("Customer with ID " + command.customerId() + " has not completed KYC.");
+            throw new IllegalStateException("Customer with ID " + customer.getId() + " has not completed KYC.");
+
+        if (command.currency().equals("USD")) {
+            if (accountRepositoryPort.existsUsdAccount(customer.getId()))
+                throw new IllegalStateException("Users are only allowed to have one USD account.");
+        }
 
         // The alias has more potential for collisions, so we generate and check it in a loop
-        Account account = this.createAccountWithUniqueAlias(
-                command.customerId(),
+        var account = this.createAccountWithUniqueAlias(
+                customer.getId(),
                 command.accountType(),
                 MoneyCurrency.ofCode(command.currency())
         );

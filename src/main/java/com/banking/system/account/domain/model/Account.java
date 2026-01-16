@@ -4,7 +4,7 @@ import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -16,28 +16,41 @@ public class Account {
     private final AccountAlias alias;
     private final AccountType accountType;
     private final MoneyCurrency currency;
-    private final LocalDateTime openedAt;
+    private final LocalDate openedAt;
 
     // Life cycle and financial fields
     private Money balance;
     private Money availableBalance;
     private Money dailyTransferLimit;
-    private Money monthlyWithdrawalLimit;
+    private Money monthlyTransferLimit;
     private AccountStatus status;
-    private LocalDateTime closedAt;
+    private LocalDate closedAt;
 
-    private Account(UUID id, UUID customerId,
-                    AccountNumber accountNumber,
-                    AccountAlias alias,
-                    AccountType accountType,
-                    MoneyCurrency currency,
-                    AccountStatus status,
-                    Money balance,
-                    Money availableBalance,
-                    Money dailyTransferLimit,
-                    Money monthlyWithdrawalLimit,
-                    LocalDateTime openedAt,
-                    LocalDateTime closedAt) {
+    private Account(
+            UUID id,
+            UUID customerId,
+            AccountNumber accountNumber,
+            AccountAlias alias,
+            AccountType accountType,
+            MoneyCurrency currency,
+            AccountStatus status,
+            Money balance,
+            Money availableBalance,
+            Money dailyTransferLimit,
+            Money monthlyTransferLimit,
+            LocalDate openedAt,
+            LocalDate closedAt) {
+        Objects.requireNonNull(customerId, "Customer ID cannot be null");
+        Objects.requireNonNull(accountNumber, "Account number cannot be null");
+        Objects.requireNonNull(accountType, "Account type cannot be null");
+        Objects.requireNonNull(currency, "Currency cannot be null");
+        Objects.requireNonNull(status, "Account status cannot be null");
+        Objects.requireNonNull(balance, "Balance cannot be null");
+        Objects.requireNonNull(availableBalance, "Available balance cannot be null");
+        Objects.requireNonNull(dailyTransferLimit, "Daily transfer limit cannot be null");
+        Objects.requireNonNull(monthlyTransferLimit, "Monthly withdrawal limit cannot be null");
+        Objects.requireNonNull(openedAt, "Opened at timestamp cannot be null");
+
         this.id = id;
         this.customerId = customerId;
         this.accountNumber = accountNumber;
@@ -48,28 +61,78 @@ public class Account {
         this.balance = balance;
         this.availableBalance = availableBalance;
         this.dailyTransferLimit = dailyTransferLimit;
-        this.monthlyWithdrawalLimit = monthlyWithdrawalLimit;
+        this.monthlyTransferLimit = monthlyTransferLimit;
         this.openedAt = openedAt;
         this.closedAt = closedAt;
     }
 
     /**
-     * Factory method to create a new Account for initial creation.
+     * Reconstitutes an existing {@link Account} aggregate from persisted state.
      * <p>
-     * Validates required fields and initializes domain defaults:
-     * - id remains null (to be assigned by persistence)
-     * - accountNumber generated using provided generator
-     * - alias generated using provided generator
-     * - status defaults to ACTIVE
-     * - balance and availableBalance default to zero
-     * - limits use default values from AccountLimits
-     * - openedAt set to current time
+     * This factory is intended for repository implementations when loading an account
+     * from the database. All invariants are still enforced by the constructor
+     * preconditions.
      *
-     * @param customerId  UUID of the customer owning this account (required)
-     * @param accountType Type of account (required)
-     * @param currency    Currency for the account (required)
-     * @return new Account instance with validated and defaulted fields
-     * @throws NullPointerException if any required parameter is null
+     * @param id                     unique identifier of the account
+     * @param customerId             identifier of the account owner
+     * @param accountNumber          business account number
+     * @param alias                  optional human-friendly alias
+     * @param accountType            type of the account (e.g. checking, savings)
+     * @param currency               currency of the account balances
+     * @param status                 current lifecycle status of the account
+     * @param balance                current booked balance
+     * @param availableBalance       current available balance
+     * @param dailyTransferLimit     configured daily transfer limit
+     * @param monthlyTransferLimit   configured monthly transfer limit
+     * @param openedAt               date when the account was opened
+     * @param closedAt               date when the account was closed, or {@code null} if active
+     * @return fully initialized {@link Account} instance representing existing data
+     */
+    public static Account reconstitute(
+            UUID id,
+            UUID customerId,
+            AccountNumber accountNumber,
+            AccountAlias alias,
+            AccountType accountType,
+            MoneyCurrency currency,
+            AccountStatus status,
+            Money balance,
+            Money availableBalance,
+            Money dailyTransferLimit,
+            Money monthlyTransferLimit,
+            LocalDate openedAt,
+            LocalDate closedAt) {
+
+        return new Account(
+                id,
+                customerId,
+                accountNumber,
+                alias,
+                accountType,
+                currency,
+                status,
+                balance,
+                availableBalance,
+                dailyTransferLimit,
+                monthlyTransferLimit,
+                openedAt,
+                closedAt
+        );
+    }
+
+    /**
+     * Creates a new {@link Account} aggregate for an account opening use case.
+     * <p>
+     * The identifier is left {@code null} so it can be assigned by the persistence
+     * layer. The account starts in {@link AccountStatus#ACTIVE} status with zero
+     * balances and default limits, and {@code openedAt} is set to {@link LocalDate#now()}.
+     *
+     * @param customerId    identifier of the account owner
+     * @param accountType   requested type of the new account
+     * @param currency      currency of the new account
+     * @param accountNumber generated business account number
+     * @param alias         optional alias for the new account
+     * @return new {@link Account} instance ready to be persisted
      */
     public static Account createNewAccount(
             UUID customerId,
@@ -77,8 +140,6 @@ public class Account {
             MoneyCurrency currency,
             AccountNumber accountNumber,
             AccountAlias alias) {
-
-        validateFields(customerId, accountType, currency, accountNumber, alias);
 
         return new Account(
                 null, // id - assigned by persistence
@@ -90,23 +151,10 @@ public class Account {
                 AccountStatus.ACTIVE,
                 Money.zero(currency),
                 Money.zero(currency),
-                AccountLimits.DEFAULT_DAILY_TRANSFER_LIMIT,
-                AccountLimits.DEFAULT_MONTHLY_WITHDRAWAL_LIMIT,
-                LocalDateTime.now(),
+                Money.of(AccountLimits.DEFAULT_DAILY_TRANSFER, currency),
+                Money.of(AccountLimits.DEFAULT_MONTHLY_TRANSFER, currency),
+                LocalDate.now(),
                 null
         );
-    }
-
-    private static void validateFields(
-            UUID customerId,
-            AccountType accountType,
-            MoneyCurrency currency,
-            AccountNumber accountNumber,
-            AccountAlias alias) {
-        Objects.requireNonNull(customerId, "Customer ID cannot be null");
-        Objects.requireNonNull(accountType, "Account type cannot be null");
-        Objects.requireNonNull(currency, "Currency cannot be null");
-        Objects.requireNonNull(accountNumber);
-        Objects.requireNonNull(alias);
     }
 }

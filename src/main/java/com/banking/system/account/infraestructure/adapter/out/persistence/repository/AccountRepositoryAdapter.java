@@ -1,4 +1,4 @@
-package com.banking.system.account.infraestructure.adapter.out.persistence;
+package com.banking.system.account.infraestructure.adapter.out.persistence.repository;
 
 import com.banking.system.account.domain.model.Account;
 import com.banking.system.account.domain.model.AccountAlias;
@@ -43,5 +43,10 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     @Override
     public List<Account> findAll(int page, int size) {
         return List.of();
+    }
+
+    @Override
+    public boolean existsUsdAccount(UUID customerId) {
+        return false;
     }
 }
