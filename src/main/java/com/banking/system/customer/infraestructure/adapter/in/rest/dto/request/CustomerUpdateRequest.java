@@ -28,12 +28,13 @@ public record CustomerUpdateRequest(
         @Size(max = 50, message = "Phone must not exceed 50 characters")
         String phone,
 
+        @NotBlank
         String address,
 
-        @Size(max = 100, message = "City must not exceed 100 characters")
+        @Size(max = 100, message = "City must not exceed 100 characters") @NotBlank
         String city,
 
-        @Size(min = 2, max = 2, message = "Country must be a 2-character ISO code")
+        @Size(min = 2, max = 2, message = "Country must be a 2-character ISO code") @NotBlank
         @Pattern(regexp = "^[A-Z]{2}$", message = "Country must be uppercase ISO 3166-1 alpha-2 code")
         String country
 ) {

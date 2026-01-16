@@ -1,10 +1,8 @@
 package com.banking.system.auth.application.service;
 
-import com.banking.system.auth.application.dto.LoginCommand;
-import com.banking.system.auth.application.dto.LoginResult;
-import com.banking.system.auth.application.dto.RegisterCommand;
-import com.banking.system.auth.application.dto.RegisterResult;
+import com.banking.system.auth.application.dto.*;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
+import com.banking.system.auth.application.usecase.FindUserByIdUseCase;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.InvalidCredentalsException;
@@ -18,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
-public class AuthService implements RegisterUseCase, LoginUseCase {
+public class AuthService implements RegisterUseCase, LoginUseCase, FindUserByIdUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserEventPublisher userEventPublisher;
@@ -64,5 +64,14 @@ public class AuthService implements RegisterUseCase, LoginUseCase {
         userEventPublisher.publishUserRegisteredEvent(savedUser, command);
 
         return new RegisterResult(savedUser.getId(), savedUser.getEmail());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResult findById(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        return new UserResult(user.getId(), user.getEmail());
     }
 }

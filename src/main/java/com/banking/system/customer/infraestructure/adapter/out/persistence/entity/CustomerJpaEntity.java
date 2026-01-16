@@ -42,12 +42,13 @@ public class CustomerJpaEntity {
     @Column(length = 50)
     private String phone;
 
+    @Column(nullable = false)
     private String address;
 
-    @Column(length = 100)
+    @Column(length = 100, nullable = false)
     private String city;
 
-    @Column(length = 2) // ISO 3166-1 alpha-2
+    @Column(length = 2, nullable = false) // ISO 3166-1 alpha-2
     private String country;
 
     @Column(name = "customer_since", nullable = false)

@@ -28,7 +28,7 @@ public class AccountJpaEntity {
     @Column(name = "account_number", nullable = false, unique = true, length = 22)
     private String accountNumber;
 
-    @Column(unique = true, length = 50)
+    @Column(unique = true, length = 50, nullable = false)
     private String alias;
 
     @Enumerated(EnumType.STRING)

@@ -111,7 +111,7 @@ public class AccountService implements
         for (int attempt = 0; attempt < MAX_ALIAS_GENERATION_ATTEMPTS; attempt++) {
             var candidateAlias = accountAliasGenerator.generate();
 
-            if (!accountRepositoryPort.existsByAlias(candidateAlias)) {
+            if (!accountRepositoryPort.existsByAlias(candidateAlias.value())) {
                 return Account.createNewAccount(
                         customerId,
                         accountType,

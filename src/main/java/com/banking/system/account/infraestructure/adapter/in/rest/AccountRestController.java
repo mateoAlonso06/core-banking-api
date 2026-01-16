@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/accounts")
+@RequestMapping("/api/v1/accounts")
 public class AccountRestController {
 
     private final CreateAccountUseCase createAccountUseCase;

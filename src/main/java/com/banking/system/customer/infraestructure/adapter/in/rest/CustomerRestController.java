@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/v1/customers")
+@RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
 @Validated
 public class CustomerRestController {
@@ -25,7 +25,7 @@ public class CustomerRestController {
     private final DeleteCustomerUseCase deleteCustomerUseCase;
 
     @GetMapping("/{id}")
-    public ResponseEntity<CustomerResult> getCustomerById(@PathVariable @NotNull @Positive UUID id) {
+    public ResponseEntity<CustomerResult> getCustomerById(@PathVariable @NotNull UUID id) {
         CustomerResult result = getCustomerUseCase.getCustomerById(id);
 
         return ResponseEntity.ok(result);

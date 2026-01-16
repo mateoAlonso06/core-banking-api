@@ -54,10 +54,10 @@ CREATE TABLE customers
     birth_date      DATE               NOT NULL,
 
     -- Contacto
-    phone           VARCHAR(20),
-    address         VARCHAR(255),
-    city            VARCHAR(100),
-    country         VARCHAR(2)                  DEFAULT 'AR',      -- ISO 3166-1 alpha-2
+    phone           VARCHAR(50),
+    address         VARCHAR(255)       NOT NULL,
+    city            VARCHAR(100)       NOT NULL,
+    country         VARCHAR(2)         NOT NULL DEFAULT 'AR',      -- ISO 3166-1 alpha-2
 
     -- Metadata
     customer_since  DATE               NOT NULL DEFAULT CURRENT_DATE,
@@ -75,11 +75,6 @@ CREATE INDEX idx_customers_document ON customers (document_number);
 -- 3. CUENTAS
 -- ============================================================================
 
--- Tipos de cuenta
-CREATE TYPE account_type AS ENUM ('SAVINGS', 'CHECKING', 'INVESTMENT');
-CREATE TYPE currency_code AS ENUM ('ARS', 'USD', 'EUR');
-CREATE TYPE account_status AS ENUM ('ACTIVE', 'BLOCKED', 'CLOSED');
-
 -- Cuenta bancaria
 CREATE TABLE accounts
 (
@@ -88,18 +83,18 @@ CREATE TABLE accounts
 
     -- Identificación
     account_number         VARCHAR(22) UNIQUE NOT NULL,                -- CBU/CVU argentino (22 dígitos)
-    alias                  VARCHAR(50) UNIQUE,                         -- Alias opcional (ej: "juan.pizza.ahorro")
+    alias                  VARCHAR(50) UNIQUE NOT NULL,                -- Alias (ej: "juan.pizza.ahorro")
 
     -- Tipo y estado
-    account_type           account_type       NOT NULL,
-    currency               currency_code      NOT NULL DEFAULT 'ARS',
-    status                 account_status     NOT NULL DEFAULT 'ACTIVE',
+    account_type           VARCHAR(20)        NOT NULL,
+    currency               VARCHAR(3)         NOT NULL DEFAULT 'ARS',
+    status                 VARCHAR(20)        NOT NULL DEFAULT 'ACTIVE',
 
     -- Saldos (usar NUMERIC para dinero, NUNCA FLOAT)
     balance                NUMERIC(19, 4)     NOT NULL DEFAULT 0.0000,
     available_balance      NUMERIC(19, 4)     NOT NULL DEFAULT 0.0000, -- balance - holds
 
-    -- Límites
+    -- Límites (nullable - el código asignará defaults si no se especifican)
     daily_transfer_limit   NUMERIC(19, 4),
     monthly_transfer_limit NUMERIC(19, 4),
 
@@ -110,9 +105,12 @@ CREATE TABLE accounts
     created_at             TIMESTAMP          NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMP          NOT NULL DEFAULT NOW(),
 
-    -- Constraint: saldo no puede ser negativo
+    -- Constraints
     CONSTRAINT chk_balance_non_negative CHECK (balance >= 0),
-    CONSTRAINT chk_available_balance_valid CHECK (available_balance <= balance)
+    CONSTRAINT chk_available_balance_valid CHECK (available_balance <= balance),
+    CONSTRAINT chk_account_type CHECK (account_type IN ('SAVINGS', 'CHECKING', 'INVESTMENT')),
+    CONSTRAINT chk_currency CHECK (currency IN ('ARS', 'USD')),
+    CONSTRAINT chk_account_status CHECK (status IN ('ACTIVE', 'BLOCKED', 'CLOSED'))
 );
 
 CREATE INDEX idx_accounts_customer ON accounts (customer_id);
@@ -138,24 +136,6 @@ CREATE INDEX idx_holds_account ON account_holds (account_id);
 -- 4. TRANSACCIONES
 -- ============================================================================
 
--- Tipos de transacción
-CREATE TYPE transaction_type AS ENUM (
-    'DEPOSIT',          -- Depósito
-    'WITHDRAWAL',       -- Extracción
-    'TRANSFER_OUT',     -- Transferencia saliente
-    'TRANSFER_IN',      -- Transferencia entrante
-    'FEE',              -- Comisión
-    'INTEREST',         -- Interés
-    'REVERSAL'          -- Reversión de transacción
-);
-
-CREATE TYPE transaction_status AS ENUM (
-    'PENDING',
-    'COMPLETED',
-    'FAILED',
-    'REVERSED'
-);
-
 -- Transacción individual (entrada en el ledger)
 CREATE TABLE transactions
 (
@@ -163,9 +143,9 @@ CREATE TABLE transactions
     account_id             UUID               NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
 
     -- Datos de la transacción
-    transaction_type       transaction_type   NOT NULL,
+    transaction_type       VARCHAR(20)        NOT NULL,
     amount                 NUMERIC(19, 4)     NOT NULL,
-    currency               currency_code      NOT NULL,
+    currency               VARCHAR(3)         NOT NULL,
 
     -- Balance después de la transacción (para auditoría)
     balance_after          NUMERIC(19, 4)     NOT NULL,
@@ -178,11 +158,15 @@ CREATE TABLE transactions
     related_transaction_id UUID REFERENCES transactions (id),
 
     -- Metadata
-    status                 transaction_status NOT NULL DEFAULT 'COMPLETED',
+    status                 VARCHAR(20)        NOT NULL DEFAULT 'COMPLETED',
     executed_at            TIMESTAMP          NOT NULL DEFAULT NOW(),
     created_at             TIMESTAMP          NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT chk_amount_positive CHECK (amount > 0)
+    -- Constraints
+    CONSTRAINT chk_amount_positive CHECK (amount > 0),
+    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER_OUT', 'TRANSFER_IN', 'FEE', 'INTEREST', 'REVERSAL')),
+    CONSTRAINT chk_transaction_currency CHECK (currency IN ('ARS', 'USD')),
+    CONSTRAINT chk_transaction_status CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'REVERSED'))
 );
 
 CREATE INDEX idx_transactions_account ON transactions (account_id);
@@ -209,7 +193,7 @@ CREATE TABLE transfers
 
     -- Datos de la transferencia
     amount                 NUMERIC(19, 4)     NOT NULL,
-    currency               currency_code      NOT NULL,
+    currency               VARCHAR(3)         NOT NULL,
     description            VARCHAR(500),
 
     -- Comisión (si aplica)
@@ -217,7 +201,7 @@ CREATE TABLE transfers
     fee_transaction_id     UUID REFERENCES transactions (id),
 
     -- Estado
-    status                 transaction_status NOT NULL DEFAULT 'COMPLETED',
+    status                 VARCHAR(20)        NOT NULL DEFAULT 'COMPLETED',
 
     -- Idempotencia (evitar transferencias duplicadas)
     idempotency_key        VARCHAR(100) UNIQUE, -- Cliente puede enviar su propio UUID
@@ -226,8 +210,11 @@ CREATE TABLE transfers
     executed_at            TIMESTAMP          NOT NULL DEFAULT NOW(),
     created_at             TIMESTAMP          NOT NULL DEFAULT NOW(),
 
+    -- Constraints
     CONSTRAINT chk_different_accounts CHECK (source_account_id != destination_account_id),
-    CONSTRAINT chk_amount_positive CHECK (amount > 0)
+    CONSTRAINT chk_transfer_amount_positive CHECK (amount > 0),
+    CONSTRAINT chk_transfer_currency CHECK (currency IN ('ARS', 'USD')),
+    CONSTRAINT chk_transfer_status CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'REVERSED'))
 );
 
 CREATE INDEX idx_transfers_source ON transfers (source_account_id);

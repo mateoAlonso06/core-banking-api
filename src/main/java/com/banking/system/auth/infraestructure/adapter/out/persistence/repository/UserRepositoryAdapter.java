@@ -1,4 +1,4 @@
-package com.banking.system.auth.infraestructure.adapter.out.persistence;
+package com.banking.system.auth.infraestructure.adapter.out.persistence.repository;
 
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import com.banking.system.auth.domain.model.User;
