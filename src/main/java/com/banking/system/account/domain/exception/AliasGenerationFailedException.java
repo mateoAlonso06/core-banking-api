@@ -1,6 +1,8 @@
 package com.banking.system.account.domain.exception;
 
-public class AliasGenerationFailedException extends RuntimeException {
+import com.banking.system.common.domain.exception.InfrastructureException;
+
+public class AliasGenerationFailedException extends InfrastructureException {
     public AliasGenerationFailedException(String message) {
         super(message);
     }

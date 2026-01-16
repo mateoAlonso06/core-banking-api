@@ -1,6 +1,8 @@
 package com.banking.system.account.domain.exception;
 
-public class AccountAlreadyExistsException extends RuntimeException {
+import com.banking.system.common.domain.exception.ResourceAlreadyExistsException;
+
+public class AccountAlreadyExistsException extends ResourceAlreadyExistsException {
     public AccountAlreadyExistsException(String message) {
         super(message);
     }

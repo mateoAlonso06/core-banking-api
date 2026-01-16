@@ -1,6 +1,8 @@
 package com.banking.system.account.domain.exception;
 
-public class InvalidAccountOwnerException extends RuntimeException {
+import com.banking.system.common.domain.exception.BusinessRuleException;
+
+public class InvalidAccountOwnerException extends BusinessRuleException {
     public InvalidAccountOwnerException(String message) {
         super(message);
     }

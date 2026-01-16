@@ -1,6 +1,8 @@
 package com.banking.system.auth.domain.exception;
 
-public class UserAlreadyExistsException extends RuntimeException {
+import com.banking.system.common.domain.exception.ResourceAlreadyExistsException;
+
+public class UserAlreadyExistsException extends ResourceAlreadyExistsException {
     public UserAlreadyExistsException(String message) {
         super(message);
     }
