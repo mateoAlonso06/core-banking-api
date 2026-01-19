@@ -1,9 +1,9 @@
 package com.banking.system.auth.infraestructure.adapter.in.rest;
 
-import com.banking.system.auth.application.dto.LoginCommand;
-import com.banking.system.auth.application.dto.LoginResult;
-import com.banking.system.auth.application.dto.RegisterCommand;
-import com.banking.system.auth.application.dto.RegisterResult;
+import com.banking.system.auth.application.dto.command.LoginCommand;
+import com.banking.system.auth.application.dto.result.LoginResult;
+import com.banking.system.auth.application.dto.command.RegisterCommand;
+import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginRequest;

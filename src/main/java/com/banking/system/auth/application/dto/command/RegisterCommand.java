@@ -1,4 +1,4 @@
-package com.banking.system.auth.application.dto;
+package com.banking.system.auth.application.dto.command;
 
 import java.time.LocalDate;
 

@@ -1,6 +1,6 @@
 package com.banking.system.auth.application.usecase;
 
-import com.banking.system.auth.application.dto.UserResult;
+import com.banking.system.auth.application.dto.result.UserResult;
 
 import java.util.UUID;
 

@@ -1,7 +1,13 @@
 package com.banking.system.auth.application.service;
 
-import com.banking.system.auth.application.dto.*;
+import com.banking.system.auth.application.dto.command.ChangeAccountPasswordCommand;
+import com.banking.system.auth.application.dto.command.LoginCommand;
+import com.banking.system.auth.application.dto.command.RegisterCommand;
+import com.banking.system.auth.application.dto.result.LoginResult;
+import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.dto.result.UserResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
+import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
 import com.banking.system.auth.application.usecase.FindUserByIdUseCase;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
@@ -13,14 +19,20 @@ import com.banking.system.auth.domain.port.out.PasswordHasher;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService implements RegisterUseCase, LoginUseCase, FindUserByIdUseCase {
+public class AuthService implements
+        RegisterUseCase,
+        LoginUseCase,
+        FindUserByIdUseCase,
+        ChangePasswordUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserEventPublisher userEventPublisher;
@@ -73,5 +85,24 @@ public class AuthService implements RegisterUseCase, LoginUseCase, FindUserByIdU
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         return new UserResult(user.getId(), user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(UUID userId, ChangeAccountPasswordCommand command) {
+        log.info("Changing password for user with ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        String oldPassword = command.oldPassword();
+        String newPassword = command.newPassword();
+
+        if (!passwordHasher.verify(oldPassword, user.getPasswordHash())) {
+            log.warn("Old password does not match for user with ID: {}", userId);
+            throw new InvalidCredentalsException("Old password is incorrect");
+        }
+
+        user
     }
 }

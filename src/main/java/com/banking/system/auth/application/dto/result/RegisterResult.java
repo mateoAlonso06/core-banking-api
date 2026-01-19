@@ -1,4 +1,4 @@
-package com.banking.system.auth.application.dto;
+package com.banking.system.auth.application.dto.result;
 
 import java.util.UUID;
 

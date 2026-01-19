@@ -76,6 +76,11 @@ public class User {
         );
     }
 
+    public void changePassword(String newPasswordHash) {
+        Objects.requireNonNull(newPasswordHash, "newPasswordHash cannot be null");
+        this.passwordHash = newPasswordHash;
+    }
+
     public void activate() {
         if (this.status != UserStatus.PENDING_VERIFICATION)
             throw new IllegalStateException("Only users with PENDING_VERIFICATION status can be activated");
