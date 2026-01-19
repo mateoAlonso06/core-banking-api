@@ -9,12 +9,15 @@ import com.banking.system.notification.application.service.AccountEmailService;
 import com.banking.system.notification.domain.model.EmailNotification;
 import com.banking.system.notification.domain.model.NotificationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AccountEmailEventListener {
@@ -25,6 +28,8 @@ public class AccountEmailEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(AccountCreatedEvent event) {
+        log.info("Received AccountCreatedEvent for accountNumber: {}", event.accountNumber());
+
         User user = userRepositoryPort.findById(event.userId())
                 .orElseThrow();
 
@@ -35,19 +40,17 @@ public class AccountEmailEventListener {
 
         accountEmailService.sendEmail(
                 new EmailNotification(
-                        user.getEmail(),
+                        user.getEmail().value(),
                         NotificationType.ACCOUNT_CREATED.getDefaultSubject(),
                         NotificationType.ACCOUNT_CREATED.getTemplateName(),
                         Map.of(
-                                user.getEmail(),
-                                Map.of(
-                                        "customerName", fullName,
-                                        "accountNumber", event.accountNumber(),
-                                        "accountAlias", event.alias(),
-                                        "currency", event.currency(),
-                                        "accountType", event.accountType(),
-                                        "openedAt", event.openedAt()
-                                )
+                                "customerName", fullName,
+                                "accountNumber", event.accountNumber(),
+                                "accountAlias", event.alias(),
+                                "currency", event.currency(),
+                                "accountType", event.accountType(),
+                                "openedAt", event.openedAt(),
+                                "balance", "0.00"
                         ),
                         NotificationType.ACCOUNT_CREATED
                 )

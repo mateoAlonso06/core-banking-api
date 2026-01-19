@@ -14,6 +14,8 @@ import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.InvalidCredentalsException;
 import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
 import com.banking.system.auth.domain.exception.UserNotFoundException;
+import com.banking.system.auth.domain.model.Email;
+import com.banking.system.auth.domain.model.Password;
 import com.banking.system.auth.domain.model.User;
 import com.banking.system.auth.domain.port.out.PasswordHasher;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
@@ -45,18 +47,18 @@ public class AuthService implements
         User user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new UserNotFoundException("Invalid credentials"));
 
-        if (!passwordHasher.verify(command.password(), user.getPasswordHash()))
+        if (!passwordHasher.verify(command.password(), user.getPassword().value()))
             throw new InvalidCredentalsException("Invalid credentials");
 
         String token = tokenGenerator.generateToken(
                 user.getId(),
-                user.getEmail(),
+                user.getEmail().value(),
                 user.getRole().name()
         );
 
         return new LoginResult(
                 user.getId(),
-                user.getEmail(),
+                user.getEmail().value(),
                 user.getRole(),
                 token
         );
@@ -69,13 +71,19 @@ public class AuthService implements
             throw new UserAlreadyExistsException("Email already in use");
         }
 
-        String hashedPassword = passwordHasher.hash(command.password());
-        User user = User.createNew(command.email(), hashedPassword);
+        // Validates password strength (length, regex...)
+        Password plainPassword = Password.fromPlainPassword(command.password());
+        Password hashedPassword = Password.fromHash(passwordHasher.hash(plainPassword.value()));
+
+        User user = User.createNew(
+                new Email(command.email()),
+                hashedPassword
+        );
         User savedUser = userRepository.save(user);
 
         userEventPublisher.publishUserRegisteredEvent(savedUser, command);
 
-        return new RegisterResult(savedUser.getId(), savedUser.getEmail());
+        return new RegisterResult(savedUser.getId(), savedUser.getEmail().value());
     }
 
     @Override
@@ -84,7 +92,7 @@ public class AuthService implements
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        return new UserResult(user.getId(), user.getEmail());
+        return new UserResult(user.getId(), user.getEmail().value());
     }
 
     @Override
@@ -95,14 +103,15 @@ public class AuthService implements
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        String oldPassword = command.oldPassword();
-        String newPassword = command.newPassword();
-
-        if (!passwordHasher.verify(oldPassword, user.getPasswordHash())) {
-            log.warn("Old password does not match for user with ID: {}", userId);
+        if (!passwordHasher.verify(command.oldPassword(), user.getPassword().value())) {
             throw new InvalidCredentalsException("Old password is incorrect");
         }
 
-        user
+        Password hashedNewPassword = Password.fromHash(passwordHasher.hash(command.newPassword()));
+
+        user.changePassword(hashedNewPassword);
+        userRepository.save(user);
+
+        log.info("Password changed successfully for user with ID: {}", userId);
     }
 }

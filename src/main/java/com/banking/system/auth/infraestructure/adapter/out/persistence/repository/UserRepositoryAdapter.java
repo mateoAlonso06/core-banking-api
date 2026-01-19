@@ -2,8 +2,8 @@ package com.banking.system.auth.infraestructure.adapter.out.persistence.reposito
 
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import com.banking.system.auth.domain.model.User;
+import com.banking.system.auth.infraestructure.adapter.out.mapper.UserJpaMapper;
 import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.UserJpaEntity;
-import com.banking.system.auth.infraestructure.adapter.out.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,14 +18,13 @@ import java.util.UUID;
 public class UserRepositoryAdapter implements UserRepositoryPort {
 
     private final SpringDataUserRepository springDataUserRepository;
-    private final UserMapper userMapper;
 
     @Override
     public List<User> findAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
         return springDataUserRepository.findAll(pageable)
-                .map(userMapper::toDomain)
+                .map(UserJpaMapper::toDomain)
                 .toList();
     }
 
@@ -37,22 +36,22 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public Optional<User> findById(UUID id) {
         return springDataUserRepository.findById(id)
-                .map(userMapper::toDomain);
+                .map(UserJpaMapper::toDomain);
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         Optional<UserJpaEntity> entity = springDataUserRepository.findByEmail(email);
 
-        return entity.map(userMapper::toDomain);
+        return entity.map(UserJpaMapper::toDomain);
     }
 
     @Override
     public User save(User user) {
-        UserJpaEntity userJpaEntity = userMapper.toJpaEntity(user);
+        UserJpaEntity userJpaEntity = UserJpaMapper.toJpaEntity(user);
         UserJpaEntity savedEntity = springDataUserRepository.save(userJpaEntity);
 
-        return userMapper.toDomain(savedEntity);
+        return UserJpaMapper.toDomain(savedEntity);
     }
 
     @Override

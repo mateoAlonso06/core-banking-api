@@ -3,291 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Nueva Cuenta Bancaria</title>
 </head>
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8FAFB;">
+<!-- Contenedor principal con tabla -->
+<table width="100%" border="0" cellspacing="0" cellpadding="20" style="background-color: #F8FAFB;">
+    <tr>
+        <td align="center">
+            <!-- Container de 600px -->
+            <table width="600" border="0" cellspacing="0" cellpadding="0"
+                   style="background-color: #FFFFFF; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
 
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #F8FAFB;
-        padding: 20px;
-    }
+                <!-- Header -->
+                <tr>
+                    <td style="background-color: #0FA0B4; padding: 40px 30px; text-align: center; color: #FFFFFF;">
+                        <h1 style="font-size: 28px; margin: 0 0 10px 0; font-weight: 600;">🎉 ¡Cuenta Creada
+                            Exitosamente!</h1>
+                        <p style="font-size: 16px; margin: 0; opacity: 0.95;">Bienvenido a Core Bank System</p>
+                    </td>
+                </tr>
 
-    .email-container {
-        max-width: 600px;
-        margin: 0 auto;
-        background-color: #FFFFFF;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #222; margin: 0 0 20px 0;">
+                            Hola <strong th:text="${customerName}">Cliente</strong>,
+                        </p>
 
-    .header {
-        background: linear-gradient(135deg, #0FA0B4 0%, #0C7A8A 100%);
-        padding: 40px 30px;
-        text-align: center;
-        color: #FFFFFF;
-    }
+                        <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 0 0 30px 0;">
+                            Nos complace informarte que tu nueva cuenta bancaria ha sido creada exitosamente en
+                            <strong>Core Bank System</strong>. A partir de ahora podrás disfrutar de todos
+                            nuestros servicios financieros.
+                        </p>
 
-    .header h1 {
-        font-size: 28px;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
+                        <!-- Account Details Box -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="20"
+                               style="background-color: #F8FAFB; border-left: 4px solid #0FA0B4; border-radius: 5px; margin: 30px 0;">
+                            <tr>
+                                <td>
+                                    <h2 style="font-size: 18px; color: #222; margin: 0 0 15px 0;">📋 Detalles de tu
+                                        cuenta</h2>
 
-    .header p {
-        font-size: 16px;
-        opacity: 0.95;
-    }
+                                    <!-- Detail Rows -->
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="10">
+                                        <tr style="border-bottom: 1px solid #E0E0E0;">
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Número de
+                                                Cuenta:
+                                            </td>
+                                            <td align="right" style="color: #0FA0B4; font-size: 14px; font-weight: 700;"
+                                                th:text="${accountNumber}">0000-0000-0000-0000
+                                            </td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #E0E0E0;">
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Alias:</td>
+                                            <td align="right" style="color: #222; font-size: 14px; font-weight: 500;"
+                                                th:text="${accountAlias}">mi.cuenta.banco
+                                            </td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #E0E0E0;">
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Tipo de
+                                                Cuenta:
+                                            </td>
+                                            <td align="right" style="color: #222; font-size: 14px; font-weight: 500;"
+                                                th:text="${accountType}">SAVINGS
+                                            </td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #E0E0E0;">
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Moneda:</td>
+                                            <td align="right" style="color: #222; font-size: 14px; font-weight: 500;"
+                                                th:text="${currency}">ARS
+                                            </td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #E0E0E0;">
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Saldo Inicial:
+                                            </td>
+                                            <td align="right" style="color: #0FA0B4; font-size: 14px; font-weight: 700;"
+                                                th:text="${balance}">$0.00
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: 600; color: #666; font-size: 14px;">Fecha de
+                                                Apertura:
+                                            </td>
+                                            <td align="right" style="color: #222; font-size: 14px; font-weight: 500;"
+                                                th:text="${openedAt}">13/01/2026
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
 
-    .content {
-        padding: 40px 30px;
-    }
+                        <!-- Info Box -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="15"
+                               style="background-color: #e8f7f9; border-left: 3px solid #0FA0B4; border-radius: 5px; margin: 20px 0;">
+                            <tr>
+                                <td>
+                                    <p style="color: #0C7A8A; font-size: 14px; margin: 0;">
+                                        💡 <strong>Tip:</strong> Guarda tu número de cuenta y alias en un lugar seguro.
+                                        Los necesitarás para recibir transferencias.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
 
-    .greeting {
-        font-size: 18px;
-        color: #222;
-        margin-bottom: 20px;
-    }
+                        <!-- Divider -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="15">
+                            <tr>
+                                <td style="height: 1px; background-color: #E0E0E0;"></td>
+                            </tr>
+                        </table>
 
-    .message {
-        font-size: 16px;
-        color: #555;
-        line-height: 1.6;
-        margin-bottom: 30px;
-    }
+                        <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 0 0 30px 0;">
+                            Tu cuenta está lista para usar. Puedes comenzar a realizar transferencias,
+                            consultar tu saldo y mucho más desde nuestra plataforma.
+                        </p>
 
-    .account-details {
-        background-color: #F8FAFB;
-        border-left: 4px solid #0FA0B4;
-        padding: 20px;
-        margin: 30px 0;
-        border-radius: 5px;
-    }
+                        <!-- CTA Button -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td align="center" style="padding: 20px 0;">
+                                    <a th:href="${loginUrl}"
+                                       style="display: inline-block; background-color: #0FA0B4; color: #FFFFFF; text-decoration: none; padding: 14px 35px; border-radius: 25px; font-weight: 600; font-size: 16px;">Acceder
+                                        a mi cuenta</a>
+                                </td>
+                            </tr>
+                        </table>
 
-    .account-details h2 {
-        font-size: 18px;
-        color: #222;
-        margin-bottom: 15px;
-    }
+                        <!-- Divider -->
+                        <table width="100%" border="0" cellspacing="0" cellpadding="15">
+                            <tr>
+                                <td style="height: 1px; background-color: #E0E0E0;"></td>
+                            </tr>
+                        </table>
 
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #E0E0E0;
-    }
+                        <p style="font-size: 14px; color: #888; line-height: 1.6; margin: 0;">
+                            Si no solicitaste esta cuenta, por favor contacta inmediatamente a nuestro
+                            equipo de soporte.
+                        </p>
+                    </td>
+                </tr>
 
-    .detail-row:last-child {
-        border-bottom: none;
-    }
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #F8FAFB; padding: 30px; text-align: center; color: #888; font-size: 13px; line-height: 1.6;">
+                        <p style="margin: 0 0 5px 0;"><strong>Core Banking System</strong></p>
+                        <p style="margin: 0 0 15px 0;">Tu banco digital de confianza</p>
+                        <p style="margin: 0 0 15px 0;">
+                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Términos de Servicio</a> |
+                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Política de Privacidad</a> |
+                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Contacto</a>
+                        </p>
+                        <p style="margin: 0 0 10px 0;">
+                            © <span th:text="${#dates.year(#dates.createNow())}">2026</span> Core Banking System.
+                            Todos los derechos reservados.
+                        </p>
+                        <p style="color: #aaa; font-size: 12px; margin: 0;">
+                            Este es un correo automático, por favor no responder.
+                        </p>
+                    </td>
+                </tr>
 
-    .detail-label {
-        font-weight: 600;
-        color: #666;
-        font-size: 14px;
-    }
-
-    .detail-value {
-        color: #222;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    .highlight {
-        color: #0FA0B4;
-        font-weight: 700;
-    }
-
-    .cta-button {
-        display: inline-block;
-        background: linear-gradient(135deg, #0FA0B4 0%, #0C7A8A 100%);
-        color: #FFFFFF;
-        text-decoration: none;
-        padding: 14px 35px;
-        border-radius: 25px;
-        font-weight: 600;
-        margin: 20px 0;
-        text-align: center;
-        transition: transform 0.2s;
-    }
-
-    .cta-button:hover {
-        transform: translateY(-2px);
-        background: linear-gradient(135deg, #0C7A8A 0%, #0FA0B4 100%);
-    }
-
-    .info-box {
-        background-color: #e8f7f9;
-        border-radius: 5px;
-        padding: 15px;
-        margin: 20px 0;
-        border-left: 3px solid #0FA0B4;
-    }
-
-    .info-box p {
-        color: #0C7A8A;
-        font-size: 14px;
-        margin: 0;
-    }
-
-    .footer {
-        background-color: #F8FAFB;
-        padding: 30px;
-        text-align: center;
-        color: #888;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .footer a {
-        color: #0FA0B4;
-        text-decoration: none;
-    }
-
-    .footer a:hover {
-        text-decoration: underline;
-    }
-
-    .divider {
-        height: 1px;
-        background-color: #E0E0E0;
-        margin: 30px 0;
-    }
-
-    .success-badge {
-        display: inline-block;
-        background-color: #43A047;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 15px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-left: 10px;
-    }
-
-    @media only screen and (max-width: 600px) {
-        .email-container {
-            margin: 0;
-            border-radius: 0;
-        }
-
-        .header {
-            padding: 30px 20px;
-        }
-
-        .content {
-            padding: 30px 20px;
-        }
-
-        .detail-row {
-            flex-direction: column;
-            gap: 5px;
-        }
-    }
-</style>
-<body>
-<div class="email-container">
-    <!-- Header -->
-    <div class="header">
-        <h1>🎉 ¡Cuenta Creada Exitosamente!</h1>
-        <p>Bienvenido a Core Bank System</p>
-    </div>
-
-    <!-- Content -->
-    <div class="content">
-        <p class="greeting">Hola <strong th:text="${clientName}">Cliente</strong>,</p>
-        <p class="message">
-            Nos complace informarte que tu nueva cuenta bancaria ha sido creada exitosamente en
-            <strong>Core Bank System</strong>. A partir de ahora podrás disfrutar de todos
-            nuestros servicios financieros.
-        </p>
-
-        <!-- Account Details -->
-        <div class="account-details">
-            <h2>📋 Detalles de tu cuenta</h2>
-
-            <div class="detail-row">
-                <span class="detail-label">Número de Cuenta:</span>
-                <span class="detail-value highlight" th:text="${accountNumber}">0000-0000-0000-0000</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="detail-label">Alias:</span>
-                <span class="detail-value" th:text="${accountAlias}">mi.cuenta.banco</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="detail-label">Tipo de Cuenta:</span>
-                <span class="detail-value" th:text="${accountType}">SAVINGS</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="detail-label">Moneda:</span>
-                <span class="detail-value" th:text="${currency}">ARS</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="detail-label">Saldo Inicial:</span>
-                <span class="detail-value highlight" th:text="${balance}">$0.00</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="detail-label">Fecha de Apertura:</span>
-                <span class="detail-value" th:text="${openedAt}">13/01/2026</span>
-            </div>
-        </div>
-
-        <!-- Info Box -->
-        <div class="info-box">
-            <p>
-                💡 <strong>Tip:</strong> Guarda tu número de cuenta y alias en un lugar seguro.
-                Los necesitarás para recibir transferencias.
-            </p>
-        </div>
-
-        <div class="divider"></div>
-
-        <p class="message">
-            Tu cuenta está lista para usar. Puedes comenzar a realizar transferencias,
-            consultar tu saldo y mucho más desde nuestra plataforma.
-        </p>
-
-        <center>
-            <a href="#" class="cta-button" th:href="${loginUrl}">Acceder a mi cuenta</a>
-        </center>
-
-        <div class="divider"></div>
-
-        <p class="message" style="font-size: 14px; color: #888;">
-            Si no solicitaste esta cuenta, por favor contacta inmediatamente a nuestro
-            equipo de soporte.
-        </p>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <p><strong>Core Banking System</strong></p>
-        <p>Tu banco digital de confianza</p>
-        <p style="margin-top: 15px;">
-            <a href="#">Términos de Servicio</a> |
-            <a href="#">Política de Privacidad</a> |
-            <a href="#">Contacto</a>
-        </p>
-        <p style="margin-top: 15px;">
-            © <span th:text="${#dates.year(#dates.createNow())}">2026</span> Core Banking System.
-            Todos los derechos reservados.
-        </p>
-        <p style="color: #aaa; font-size: 12px; margin-top: 10px;">
-            Este es un correo automático, por favor no responder.
-        </p>
-    </div>
-</div>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
