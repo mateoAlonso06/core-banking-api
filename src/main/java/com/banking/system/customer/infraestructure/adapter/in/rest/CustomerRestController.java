@@ -1,11 +1,8 @@
 package com.banking.system.customer.infraestructure.adapter.in.rest;
 
-import com.banking.system.customer.application.dto.command.UpdateCustommerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.usecase.DeleteCustomerUseCase;
 import com.banking.system.customer.application.usecase.GetCustomerUseCase;
-import com.banking.system.customer.infraestructure.adapter.in.rest.dto.request.CustomerUpdateRequest;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +23,7 @@ public class CustomerRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResult> getCustomerById(@PathVariable @NotNull UUID id) {
-        CustomerResult result = getCustomerUseCase.getCustomerById(id);
+        var result = getCustomerUseCase.getCustomerById(id);
 
         return ResponseEntity.ok(result);
     }
@@ -34,7 +31,7 @@ public class CustomerRestController {
     @GetMapping
     public ResponseEntity<List<CustomerResult>> getAllCustomers(@RequestParam(required = false, defaultValue = "0") int page,
                                                                 @RequestParam(required = false, defaultValue = "10") int size) {
-        List<CustomerResult> customers = getCustomerUseCase.getAll(page, size);
+        var customers = getCustomerUseCase.getAll(page, size);
         return ResponseEntity.ok(customers);
     }
 

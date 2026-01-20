@@ -1,6 +1,6 @@
 package com.banking.system.auth.application.service;
 
-import com.banking.system.auth.application.dto.command.ChangeAccountPasswordCommand;
+import com.banking.system.auth.application.dto.command.ChangeUserPasswordCommand;
 import com.banking.system.auth.application.dto.command.LoginCommand;
 import com.banking.system.auth.application.dto.command.RegisterCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
@@ -97,7 +97,7 @@ public class AuthService implements
 
     @Override
     @Transactional
-    public void changePassword(UUID userId, ChangeAccountPasswordCommand command) {
+    public void changePassword(UUID userId, ChangeUserPasswordCommand command) {
         log.info("Changing password for user with ID: {}", userId);
 
         User user = userRepository.findById(userId)

@@ -2,22 +2,21 @@ package com.banking.system.auth.infraestructure.adapter.in.rest;
 
 import com.banking.system.auth.application.dto.command.LoginCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
-import com.banking.system.auth.application.dto.command.RegisterCommand;
 import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.LoginResponse;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.RegisterUserResponse;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.ChangeUserPasswordRequest;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.LoginRequest;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.RegisterUserRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,48 +25,33 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthRestController {
     private final RegisterUseCase registerUseCase;
     private final LoginUseCase loginUseCase;
+    private final ChangePasswordUseCase changePasswordUseCase;
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterUserResponse> register(@RequestBody @Valid RegisterUserRequest request) {
-        RegisterCommand command = new RegisterCommand(
-                request.email(),
-                request.password(),
-                request.firstName(),
-                request.lastName(),
-                request.documentType(),
-                request.documentNumber(),
-                request.birthDate(),
-                request.phone(),
-                request.address(),
-                request.city(),
-                request.country()
-        );
+    public ResponseEntity<RegisterResult> register(@RequestBody @Valid RegisterUserRequest request) {
+        var command = request.toCommand();
 
-        RegisterResult result = registerUseCase.register(command);
+        var result = registerUseCase.register(command);
 
-        RegisterUserResponse response = new RegisterUserResponse(
-                result.id(),
-                result.email()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
-        LoginCommand command = new LoginCommand(
+    public ResponseEntity<LoginResult> login(@RequestBody @Valid LoginRequest request) {
+        var command = new LoginCommand(
                 request.email(),
                 request.password()
         );
 
-        LoginResult result = loginUseCase.login(command);
+        var result = loginUseCase.login(command);
 
-        LoginResponse response = new LoginResponse(
-                result.id(),
-                result.email(),
-                result.token()
-        );
+        return ResponseEntity.ok(result);
+    }
 
-        return ResponseEntity.ok(response);
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal UUID userId,
+                                               @RequestBody ChangeUserPasswordRequest request) {
+        changePasswordUseCase.changePassword(userId, request.toCommand());
+        return ResponseEntity.noContent().build();
     }
 }

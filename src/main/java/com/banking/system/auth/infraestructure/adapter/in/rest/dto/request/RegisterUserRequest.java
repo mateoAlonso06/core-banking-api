@@ -1,5 +1,6 @@
-package com.banking.system.auth.infraestructure.adapter.in.rest.dto;
+package com.banking.system.auth.infraestructure.adapter.in.rest.dto.request;
 
+import com.banking.system.auth.application.dto.command.RegisterCommand;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,4 +41,21 @@ public record RegisterUserRequest(
 
         @Size(max = 2)
         String country
-) {}
+) {
+
+    public RegisterCommand toCommand() {
+        return new RegisterCommand(
+                this.email,
+                this.password,
+                this.firstName,
+                this.lastName,
+                this.documentType,
+                this.documentNumber,
+                this.birthDate,
+                this.phone,
+                this.address,
+                this.city,
+                this.country
+        );
+    }
+}
