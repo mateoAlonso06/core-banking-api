@@ -1,5 +1,9 @@
 package com.banking.system.account.domain.model;
 
+import com.banking.system.account.domain.exception.AccountNotActiveException;
+import com.banking.system.account.domain.exception.CurrencyMismatchException;
+import com.banking.system.account.domain.exception.InsufficientFundsException;
+import com.banking.system.account.domain.exception.InvalidAmountException;
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
 import lombok.Getter;
@@ -13,12 +17,10 @@ public class Account {
     private final UUID id;
     private final UUID customerId;
     private final AccountNumber accountNumber;
-    private final AccountAlias alias;
     private final AccountType accountType;
     private final MoneyCurrency currency;
     private final LocalDate openedAt;
-
-    // Life cycle and financial fields
+    private AccountAlias alias;
     private Money balance;
     private Money availableBalance;
     private Money dailyTransferLimit;
@@ -73,19 +75,19 @@ public class Account {
      * from the database. All invariants are still enforced by the constructor
      * preconditions.
      *
-     * @param id                     unique identifier of the account
-     * @param customerId             identifier of the account owner
-     * @param accountNumber          business account number
-     * @param alias                  optional human-friendly alias
-     * @param accountType            type of the account (e.g. checking, savings)
-     * @param currency               currency of the account balances
-     * @param status                 current lifecycle status of the account
-     * @param balance                current booked balance
-     * @param availableBalance       current available balance
-     * @param dailyTransferLimit     configured daily transfer limit
-     * @param monthlyTransferLimit   configured monthly transfer limit
-     * @param openedAt               date when the account was opened
-     * @param closedAt               date when the account was closed, or {@code null} if active
+     * @param id                   unique identifier of the account
+     * @param customerId           identifier of the account owner
+     * @param accountNumber        business account number
+     * @param alias                optional human-friendly alias
+     * @param accountType          type of the account (e.g. checking, savings)
+     * @param currency             currency of the account balances
+     * @param status               current lifecycle status of the account
+     * @param balance              current booked balance
+     * @param availableBalance     current available balance
+     * @param dailyTransferLimit   configured daily transfer limit
+     * @param monthlyTransferLimit configured monthly transfer limit
+     * @param openedAt             date when the account was opened
+     * @param closedAt             date when the account was closed, or {@code null} if active
      * @return fully initialized {@link Account} instance representing existing data
      */
     public static Account reconstitute(
@@ -156,5 +158,62 @@ public class Account {
                 LocalDate.now(),
                 null
         );
+    }
+
+    public void debit(Money amount) {
+        Objects.requireNonNull(amount, "Debit amount cannot be null");
+        validateActiveAccount();
+        validateSameCurrency(amount.getCurrency());
+        validatePositiveAmount(amount);
+        validateSufficientFunds(amount);
+
+        this.balance = this.balance.subtract(amount);
+        this.availableBalance = this.availableBalance.subtract(amount);
+    }
+
+    public void credit(Money amount) {
+        Objects.requireNonNull(amount, "Credit amount cannot be null");
+        validateActiveAccount();
+        validateSameCurrency(amount.getCurrency());
+        validatePositiveAmount(amount);
+
+        this.balance = this.balance.add(amount);
+        this.availableBalance = this.availableBalance.add(amount);
+    }
+
+    private void validatePositiveAmount(Money amount) {
+        if (amount.isNegative() || amount.isZero()) {
+            throw new InvalidAmountException("Amount must be positive: " + amount);
+        }
+    }
+
+    private void validateSameCurrency(MoneyCurrency currency) {
+        if (!this.currency.value().equals(currency.value())) {
+            throw new CurrencyMismatchException("Account currency " + this.currency.value() + " does not match operation currency " + currency.value());
+        }
+    }
+
+    private void validateActiveAccount() {
+        if (this.status != AccountStatus.ACTIVE) {
+            throw new AccountNotActiveException("Account with id " + this.id + " is not active");
+        }
+    }
+
+    private void validateSufficientFunds(Money amount) {
+        if (this.availableBalance.subtract(amount).isNegative()) {
+            throw new InsufficientFundsException(this.id, amount, this.availableBalance);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id, account.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

@@ -1,9 +1,8 @@
 package com.banking.system.transaction.application.usecase;
 
-import com.banking.system.common.domain.Money;
-
-import java.util.UUID;
+import com.banking.system.transaction.application.dto.command.TransferMoneyCommand;
+import com.banking.system.transaction.application.dto.result.TransferResult;
 
 public interface TransferUseCase {
-    void transfer(UUID fromAccountId, UUID toAccountId, Money amount);
+    TransferResult transfer(TransferMoneyCommand command);
 }

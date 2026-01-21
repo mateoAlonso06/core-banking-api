@@ -49,6 +49,14 @@ public final class Money {
         return value.compareTo(BigDecimal.ZERO) < 0;
     }
 
+    public boolean isZero() {
+        return value.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    public boolean isPositive() {
+        return value.compareTo(BigDecimal.ZERO) > 0;
+    }
+
     private void validateSameCurrency(Money other) {
         if (!this.currency.equals(other.currency))
             throw new IllegalArgumentException("Currency mismatch");
