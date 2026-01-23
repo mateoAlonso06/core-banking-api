@@ -17,7 +17,7 @@ public class Transaction {
     private final Description description;
     private final ReferenceNumber referenceNumber;
     private final Instant executedAt;
-    private final TransactionStatus status;
+    private TransactionStatus status;
 
     public Transaction(UUID id,
                        UUID accountId,
@@ -28,6 +28,7 @@ public class Transaction {
                        ReferenceNumber referenceNumber,
                        TransactionStatus status,
                        Instant executedAt) {
+
         Objects.requireNonNull(accountId, "Account ID cannot be null");
         Objects.requireNonNull(transactionType, "Transaction type cannot be null");
         Objects.requireNonNull(amount, "Amount cannot be null");
@@ -127,5 +128,19 @@ public class Transaction {
                 status,
                 executedAt
         );
+    }
+
+    public void markCompleted() {
+        if (this.status != TransactionStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING transactions can be marked as COMPLETED");
+        }
+        this.status = TransactionStatus.COMPLETED;
+    }
+
+    public void markFailed() {
+        if (this.status != TransactionStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING transactions can be marked as FAILED");
+        }
+        this.status = TransactionStatus.FAILED;
     }
 }

@@ -24,18 +24,15 @@ CREATE TABLE transactions
 
     -- Datos de la transacción
     transaction_type       transaction_type   NOT NULL,
-    amount                 NUMERIC(19, 4)     NOT NULL,
-    currency               currency_code      NOT NULL,
+    amount                 NUMERIC(19, 2)     NOT NULL,
+    currency               VARCHAR(3)         NOT NULL,
 
     -- Balance después de la transacción (para auditoría)
-    balance_after          NUMERIC(19, 4)     NOT NULL,
+    balance_after          NUMERIC(19, 2)     NOT NULL,
 
     -- Descripción
     description            VARCHAR(500),
     reference_number       VARCHAR(100), -- Número de referencia externo
-
-    -- Relacionado (si es transferencia)
-    related_transaction_id UUID REFERENCES transactions (id),
 
     -- Metadata
     status                 transaction_status NOT NULL DEFAULT 'COMPLETED',
@@ -64,16 +61,13 @@ CREATE TABLE transfers
     credit_transaction_id  UUID UNIQUE        NOT NULL REFERENCES transactions (id),
 
     -- Datos de la transferencia
-    amount                 NUMERIC(19, 4)     NOT NULL,
-    currency               currency_code      NOT NULL,
-    description            VARCHAR(500),
+    amount                 NUMERIC(19, 2)     NOT NULL,
+    currency               VARCHAR(3)      NOT NULL,
+    description            VARCHAR(255),
 
     -- Comisión (si aplica)
-    fee_amount             NUMERIC(19, 4)              DEFAULT 0,
+    fee_amount             NUMERIC(19, 2)              DEFAULT 0,
     fee_transaction_id     UUID REFERENCES transactions (id),
-
-    -- Estado
-    status                 transaction_status NOT NULL DEFAULT 'COMPLETED',
 
     -- Idempotencia (evitar transferencias duplicadas)
     idempotency_key        VARCHAR(100) UNIQUE, -- Cliente puede enviar su propio UUID

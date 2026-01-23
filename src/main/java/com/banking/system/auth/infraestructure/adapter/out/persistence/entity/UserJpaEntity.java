@@ -28,7 +28,7 @@ public class UserJpaEntity {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "password_hash")
     private String passwordHash;
 
     @Column(nullable = false)
@@ -42,7 +42,7 @@ public class UserJpaEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @Column(name = "last_login_at")

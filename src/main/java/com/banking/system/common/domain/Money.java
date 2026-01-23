@@ -53,12 +53,26 @@ public final class Money {
         return value.compareTo(BigDecimal.ZERO) == 0;
     }
 
-    public boolean isPositive() {
-        return value.compareTo(BigDecimal.ZERO) > 0;
-    }
-
     private void validateSameCurrency(Money other) {
         if (!this.currency.equals(other.currency))
             throw new IllegalArgumentException("Currency mismatch");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Money money = (Money) o;
+        return value.compareTo(money.value) == 0 && currency.equals(money.currency);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(value.stripTrailingZeros(), currency);
+    }
+
+    @Override
+    public String toString() {
+        return value.toPlainString() + " " + currency.code();
     }
 }

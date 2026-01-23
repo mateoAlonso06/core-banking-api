@@ -4,10 +4,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record TransferResult(
+        UUID transferId,
         UUID sourceAccountId,
         UUID targetAccountId,
         BigDecimal amount,
-        BigDecimal sourceBalanceAfter,
-        BigDecimal targetBalanceAfter
+        UUID creditTransactionId,
+        UUID debitTransactionId,
+        UUID feeTransactionId
 ) {
 }

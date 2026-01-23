@@ -2,7 +2,6 @@ package com.banking.system.transaction.domain.service;
 
 import com.banking.system.account.domain.model.Account;
 import com.banking.system.common.domain.Money;
-import com.banking.system.transaction.application.dto.result.TransferResult;
 import com.banking.system.transaction.domain.exception.SameAccountTransferException;
 import com.banking.system.transaction.domain.exception.TransferCurrencyMismatchException;
 import com.banking.system.transaction.domain.model.Description;
@@ -14,6 +13,10 @@ public class TransferDomainService {
     public void transfer(Account sourceAccount, Account targetAccount, Money amount, Description description, Money feeAmount) {
         validateDifferentAccounts(sourceAccount, targetAccount);
         validateSameCurrency(sourceAccount, targetAccount);
+
+        if (feeAmount != null) {
+            amount.add(feeAmount);
+        }
 
         sourceAccount.debit(amount);
         targetAccount.credit(amount);

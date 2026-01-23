@@ -18,12 +18,12 @@ CREATE TABLE accounts
     status                 account_status     NOT NULL DEFAULT 'ACTIVE',
 
     -- Saldos (usar NUMERIC para dinero, NUNCA FLOAT)
-    balance                NUMERIC(19, 4)     NOT NULL DEFAULT 0.0000,
-    available_balance      NUMERIC(19, 4)     NOT NULL DEFAULT 0.0000, -- balance - holds
+    balance                NUMERIC(19, 2)     NOT NULL DEFAULT 0.00,
+    available_balance      NUMERIC(19, 2)     NOT NULL DEFAULT 0.00, -- balance - holds
 
     -- Límites
-    daily_transfer_limit   NUMERIC(19, 4),
-    monthly_transfer_limit NUMERIC(19, 4),
+    daily_transfer_limit   NUMERIC(19, 2),
+    monthly_transfer_limit NUMERIC(19, 2),
 
     -- Metadata
     opened_at              DATE               NOT NULL DEFAULT CURRENT_DATE,
@@ -47,7 +47,7 @@ CREATE TABLE account_holds
 (
     id         UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
     account_id UUID           NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
-    amount     NUMERIC(19, 4) NOT NULL,
+    amount     NUMERIC(19, 2) NOT NULL,
     reason     VARCHAR(255),
     expires_at TIMESTAMP      NOT NULL,
     released   BOOLEAN                 DEFAULT FALSE,

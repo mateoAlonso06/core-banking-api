@@ -36,7 +36,7 @@ public class CustomerRestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomerById(@PathVariable @NotNull @Positive UUID id) {
+    public ResponseEntity<Void> deleteCustomerById(@PathVariable @NotNull UUID id) {
         deleteCustomerUseCase.deleteCustomerById(id);
         return ResponseEntity.noContent().build();
     }

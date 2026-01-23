@@ -2,10 +2,13 @@ package com.banking.system.transaction.infraestructure.adapter.out.persistence.r
 
 import com.banking.system.transaction.domain.model.Transaction;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
+import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransactionJpaEntityMapper;
+import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -15,11 +18,25 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
 
     @Override
     public Transaction save(Transaction transaction) {
-        return null;
+        TransactionJpaEntity txJpaEntity = TransactionJpaEntity.builder()
+                .accountId(transaction.getAccountId())
+                .transactionType(transaction.getTransactionType())
+                .amount(transaction.getAmount().getValue())
+                .currency(transaction.getAmount().getCurrency().code())
+                .balanceAfter(transaction.getBalanceAfter().getValue())
+                .description(transaction.getDescription().value())
+                .referenceNumber(transaction.getReferenceNumber().value())
+                .status(transaction.getStatus())
+                .executedAt(transaction.getExecutedAt())
+                .build();
+
+        TransactionJpaEntity txJpaEntitySaved = transactionJpaRepository.save(txJpaEntity);
+
+        return TransactionJpaEntityMapper.toDomainEntity(txJpaEntitySaved);
     }
 
     @Override
-    public Transaction findById(UUID transactionId) {
+    public Optional<Transaction> findById(UUID transactionId) {
         return null;
     }
 
@@ -31,10 +48,5 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
     @Override
     public void deleteTransaction(UUID transactionId) {
 
-    }
-
-    @Override
-    public Transaction updateTransaction(Transaction transaction) {
-        return null;
     }
 }

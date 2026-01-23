@@ -42,16 +42,16 @@ public class AccountJpaEntity {
     @Column(nullable = false)
     private AccountStatus status;
 
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
-    @Column(name = "available_balance", nullable = false, precision = 19, scale = 4)
+    @Column(name = "available_balance", nullable = false, precision = 19, scale = 2)
     private BigDecimal availableBalance;
 
-    @Column(name = "daily_transfer_limit", precision = 19, scale = 4)
+    @Column(name = "daily_transfer_limit", precision = 19, scale = 2)
     private BigDecimal dailyTransferLimit;
 
-    @Column(name = "monthly_transfer_limit", precision = 19, scale = 4)
+    @Column(name = "monthly_transfer_limit", precision = 19, scale = 2)
     private BigDecimal monthlyTransferLimit;
 
     @Column(name = "opened_at", nullable = false, updatable = false)

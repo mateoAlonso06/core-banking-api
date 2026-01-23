@@ -2,23 +2,57 @@ package com.banking.system.transaction.infraestructure.adapter.out.persistence.r
 
 import com.banking.system.transaction.domain.model.Transfer;
 import com.banking.system.transaction.domain.port.out.TransferRepositoryPort;
+import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransferJpaEntityMapper;
+import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
+import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransferJpaEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class TransferRepositoryAdapter implements TransferRepositoryPort {
+    private final SpringDataTransferRepository transferJpaRepository;
+    private final SpringDataTransactionRepository transactionJpaRepository;
+
     @Override
     public Transfer save(Transfer transfer) {
-        return null;
+        var transactionOut = transactionJpaRepository.findById(transfer.getDebitTransactionId())
+                .orElseThrow(() -> new IllegalStateException("Debit transaction not found"));
+        var transactionIn = transactionJpaRepository.findById(transfer.getCreditTransactionId())
+                .orElseThrow(() -> new IllegalStateException("Credit transaction not found"));
+
+        TransactionJpaEntity transactionFee = null;
+
+        if (transfer.getFeeAmount() != null) {
+            transactionFee = transactionJpaRepository.findById(transfer.getFeeTransactionId())
+                    .orElseThrow(() -> new IllegalStateException("Fee transaction not found"));
+        }
+
+        var transferJpaEntity = TransferJpaEntity.builder()
+                .sourceAccountId(transfer.getSourceAccountId())
+                .destinationAccountId(transfer.getDestinationAccountId())
+                .debitTransaction(transactionOut)
+                .creditTransaction(transactionIn)
+                .feeTransaction(transactionFee) // can be null
+                .amount(transfer.getAmount().getValue())
+                .currency(transfer.getAmount().getCurrency().code())
+                .description(transfer.getDescription().value())
+                .idempotencyKey(transfer.getIdempotencyKey().value())
+                .executedAt(transfer.getExecutedAt())
+                .build();
+
+        var transferSaved = transferJpaRepository.save(transferJpaEntity);
+
+        return TransferJpaEntityMapper.toDomainEntity(transferSaved);
     }
 
     @Override
-    public Transfer findById(UUID id) {
-        return null;
+    public Optional<Transfer> findById(UUID id) {
+        return Optional.empty();
     }
 
     @Override
@@ -32,7 +66,12 @@ public class TransferRepositoryAdapter implements TransferRepositoryPort {
     }
 
     @Override
-    public Transfer findByAccountId(UUID accountId) {
-        return null;
+    public Optional<Transfer> findByAccountId(UUID accountId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Transfer> findByIdempotencyKey(String idempotencyKey) {
+        return Optional.empty();
     }
 }

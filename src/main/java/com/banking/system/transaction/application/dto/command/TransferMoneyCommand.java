@@ -10,6 +10,7 @@ public record TransferMoneyCommand(
         String currency,
         BigDecimal feeAmount,
         String feeCurrency,
-        String description
+        String description,
+        UUID idempotencyKey
 ) {
 }
