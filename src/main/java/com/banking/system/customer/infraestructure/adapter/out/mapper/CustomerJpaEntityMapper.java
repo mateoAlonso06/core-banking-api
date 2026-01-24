@@ -46,7 +46,8 @@ public class CustomerJpaEntityMapper {
                 ),
                 entity.getCustomerSince(),
                 entity.getKycStatus(),
-                entity.getRiskLevel()
+                entity.getRiskLevel(),
+                entity.getKycVerifiedAt()
         );
     }
 }

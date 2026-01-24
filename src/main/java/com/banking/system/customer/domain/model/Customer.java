@@ -4,8 +4,10 @@ import com.banking.system.common.domain.Address;
 import com.banking.system.common.domain.IdentityDocument;
 import com.banking.system.common.domain.PersonName;
 import com.banking.system.common.domain.Phone;
+import com.banking.system.customer.domain.exception.KycIsAlreadyProccedException;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
@@ -21,6 +23,7 @@ public class Customer {
     private Address address;
     private final LocalDate customerSince;
     private KycStatus kycStatus;
+    private Instant kycVerifiedAt;
     private RiskLevel riskLevel;
 
     private Customer(
@@ -33,7 +36,9 @@ public class Customer {
             Address address,
             LocalDate customerSince,
             KycStatus kycStatus,
-            RiskLevel riskLevel) {
+            RiskLevel riskLevel,
+            Instant kycVerifiedAt) {
+
         Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(personName, "personName must not be null");
         Objects.requireNonNull(identityDocument, "identityDocument must not be null");
@@ -53,6 +58,7 @@ public class Customer {
         this.customerSince = customerSince;
         this.kycStatus = kycStatus;
         this.riskLevel = riskLevel;
+        this.kycVerifiedAt = kycVerifiedAt;
     }
 
     /**
@@ -79,7 +85,8 @@ public class Customer {
             Address address,
             LocalDate customerSince,
             KycStatus kycStatus,
-            RiskLevel riskLevel
+            RiskLevel riskLevel,
+            Instant kycVerifiedAt
     ) {
         return new Customer(
                 id,
@@ -91,10 +98,10 @@ public class Customer {
                 address,
                 customerSince,
                 kycStatus,
-                riskLevel
+                riskLevel,
+                kycVerifiedAt
         );
     }
-
 
     /**
      * Creates a new Customer with default values for certain fields.
@@ -127,7 +134,8 @@ public class Customer {
                 address,
                 LocalDate.now(),
                 KycStatus.PENDING,
-                RiskLevel.LOW
+                RiskLevel.LOW,
+                null
         );
     }
 
@@ -137,27 +145,17 @@ public class Customer {
 
     public void approveKyc() {
         if (this.kycStatus != KycStatus.PENDING) {
-            throw new IllegalStateException("KYC can only be approved from PENDING");
+            throw new KycIsAlreadyProccedException("KYC can only be approved from PENDING");
         }
         this.kycStatus = KycStatus.APPROVED;
+        this.kycVerifiedAt = Instant.now();
     }
 
     public void rejectKyc() {
         if (this.kycStatus != KycStatus.PENDING) {
-            throw new IllegalStateException("KYC can only be rejected from PENDING");
+            throw new KycIsAlreadyProccedException("KYC can only be rejected from PENDING");
         }
         this.kycStatus = KycStatus.REJECTED;
-    }
-
-    public enum KycStatus {
-        PENDING,
-        APPROVED,
-        REJECTED
-    }
-
-    public enum RiskLevel {
-        LOW,
-        MEDIUM,
-        HIGH
+        this.kycVerifiedAt = Instant.now();
     }
 }

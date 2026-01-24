@@ -1,13 +1,14 @@
 package com.banking.system.customer.application.service;
 
+import com.banking.system.common.domain.exception.BusinessRuleException;
 import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.mapper.CustomerMapper;
-import com.banking.system.customer.application.usecase.CreateCustomerUseCase;
-import com.banking.system.customer.application.usecase.DeleteCustomerUseCase;
-import com.banking.system.customer.application.usecase.GetCustomerUseCase;
+import com.banking.system.customer.application.usecase.*;
 import com.banking.system.customer.domain.exception.CustomerAlreadyExistsException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
+import com.banking.system.customer.domain.exception.KycIsAlreadyProccedException;
+import com.banking.system.customer.domain.model.RiskLevel;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCase, DeleteCustomerUseCase {
+public class CustomerService implements
+        CreateCustomerUseCase,
+        GetCustomerUseCase,
+        DeleteCustomerUseCase,
+        ApproveKycUseCase,
+        RejectKycUseCase {
 
     private final CustomerRepositoryPort customerRepository;
 
@@ -73,5 +79,23 @@ public class CustomerService implements CreateCustomerUseCase, GetCustomerUseCas
         var customerSaved = customerRepository.save(customer);
 
         return CustomerResult.fromDomain(customerSaved);
+    }
+
+    @Override
+    public void approveKyc(UUID customerId) {
+        var customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + customerId));
+
+        customer.approveKyc();
+        customerRepository.save(customer);
+    }
+
+    @Override
+    public void rejectKyc(UUID id) {
+        var customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
+
+        customer.rejectKyc();
+        customerRepository.save(customer);
     }
 }

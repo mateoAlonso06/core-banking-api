@@ -1,7 +1,9 @@
 package com.banking.system.transaction.application.usecase;
 
-import com.banking.system.transaction.application.dto.command.DepositCommand;
+import com.banking.system.transaction.application.dto.command.DepositMoneyCommand;
+
+import java.util.UUID;
 
 public interface DepositUseCase {
-    void deposit(DepositCommand command);
+    void deposit(DepositMoneyCommand command, UUID userId);
 }

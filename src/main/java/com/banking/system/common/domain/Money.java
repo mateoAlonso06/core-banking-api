@@ -1,5 +1,6 @@
 package com.banking.system.common.domain;
 
+import com.banking.system.common.CurrencyMismatchException;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -53,9 +54,9 @@ public final class Money {
         return value.compareTo(BigDecimal.ZERO) == 0;
     }
 
-    private void validateSameCurrency(Money other) {
+    public void validateSameCurrency(Money other) {
         if (!this.currency.equals(other.currency))
-            throw new IllegalArgumentException("Currency mismatch");
+            throw new CurrencyMismatchException("Currency mismatch: " + this.currency + " vs " + other.currency);
     }
 
     @Override

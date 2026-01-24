@@ -1,7 +1,7 @@
 package com.banking.system.account.domain.model;
 
 import com.banking.system.account.domain.exception.AccountNotActiveException;
-import com.banking.system.account.domain.exception.CurrencyMismatchException;
+import com.banking.system.common.CurrencyMismatchException;
 import com.banking.system.account.domain.exception.InsufficientFundsException;
 import com.banking.system.account.domain.exception.InvalidAmountException;
 import com.banking.system.common.domain.Money;
@@ -66,6 +66,25 @@ public class Account {
         this.monthlyTransferLimit = monthlyTransferLimit;
         this.openedAt = openedAt;
         this.closedAt = closedAt;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return Objects.equals(id, account.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    private void validatePositiveAmount(Money amount) {
+        if (amount.isNegative() || amount.isZero()) {
+            throw new InvalidAmountException("Amount must be positive: " + amount);
+        }
     }
 
     /**
@@ -181,11 +200,10 @@ public class Account {
         this.availableBalance = this.availableBalance.add(amount);
     }
 
-    private void validatePositiveAmount(Money amount) {
-        if (amount.isNegative() || amount.isZero()) {
-            throw new InvalidAmountException("Amount must be positive: " + amount);
-        }
+    public boolean isActive() {
+        return this.status == AccountStatus.ACTIVE;
     }
+
 
     private void validateSameCurrency(MoneyCurrency currency) {
         if (!this.currency.value().equals(currency.value())) {
@@ -203,17 +221,5 @@ public class Account {
         if (this.availableBalance.subtract(amount).isNegative()) {
             throw new InsufficientFundsException(this.id, amount, this.availableBalance);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        Account account = (Account) o;
-        return Objects.equals(id, account.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
     }
 }

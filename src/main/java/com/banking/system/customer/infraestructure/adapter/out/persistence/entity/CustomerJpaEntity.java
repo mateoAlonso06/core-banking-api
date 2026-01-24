@@ -1,6 +1,8 @@
 package com.banking.system.customer.infraestructure.adapter.out.persistence.entity;
 
 import com.banking.system.customer.domain.model.Customer;
+import com.banking.system.customer.domain.model.KycStatus;
+import com.banking.system.customer.domain.model.RiskLevel;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -56,11 +58,14 @@ public class CustomerJpaEntity {
 
     @Column(name = "kyc_status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private Customer.KycStatus kycStatus;
+    private KycStatus kycStatus;
 
     @Column(name = "risk_level", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private Customer.RiskLevel riskLevel;
+    private RiskLevel riskLevel;
+
+    @Column(name = "kyc_verified_at")
+    private Instant kycVerifiedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

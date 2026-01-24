@@ -1,4 +1,4 @@
-package com.banking.system.account.domain.exception;
+package com.banking.system.common;
 
 import com.banking.system.common.domain.exception.BusinessRuleException;
 

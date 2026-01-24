@@ -47,3 +47,7 @@ ALTER TABLE transactions
 -- Drop the ENUM types (no longer needed)
 DROP TYPE transaction_type;
 DROP TYPE transaction_status;
+
+-- Add new column with TIMESTAMP WITH TIME ZONE type
+ALTER TABLE customers
+    ALTER COLUMN kyc_verified_at TYPE TIMESTAMP WITH TIME ZONE;

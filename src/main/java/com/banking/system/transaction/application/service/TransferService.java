@@ -13,6 +13,7 @@ import com.banking.system.transaction.application.usecase.GetTransferByIdUseCase
 import com.banking.system.transaction.application.usecase.TransferMoneyUseCase;
 import com.banking.system.transaction.domain.exception.TransferNotFoundException;
 import com.banking.system.transaction.domain.model.*;
+import com.banking.system.transaction.domain.model.TransferExecution;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.domain.port.out.TransferRepositoryPort;
 import com.banking.system.transaction.domain.service.TransferDomainService;
@@ -28,9 +29,8 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TransferService implements
-        TransferMoneyUseCase,
-        GetTransferByIdUseCase {
+public class TransferService implements TransferMoneyUseCase, GetTransferByIdUseCase {
+
     private final TransferRepositoryPort transferRepositoryPort;
     private final AccountRepositoryPort accountRepositoryPort;
     private final TransactionRepositoryPort transactionRepositoryPort;
@@ -39,96 +39,36 @@ public class TransferService implements
     @Override
     @Transactional
     public TransferResult transfer(TransferMoneyCommand command) {
-        log.info("Initiating transfer from account {} to account {} for amount {} {}", command.fromAccountId(), command.toAccountId(), command.amount(), command.currency());
+        log.info("Initiating transfer from account {} to account {}",
+                command.fromAccountId(), command.toAccountId());
 
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
 
         Optional<Transfer> existingTransfer = transferRepositoryPort.findByIdempotencyKey(idempotencyKey.value());
-
         if (existingTransfer.isPresent()) {
             log.info("Transfer already exists for idempotency key {}", idempotencyKey.value());
             return TransferDomainMapper.toResult(existingTransfer.get());
         }
 
-        Account sourceAccount = accountRepositoryPort.findById(command.fromAccountId())
-                .orElseThrow(() -> new AccountNotFoundException("Source account not found"));
+        Account sourceAccount = findAccount(command.fromAccountId(), "Source");
+        Account targetAccount = findAccount(command.toAccountId(), "Target");
 
-        Account targetAccount = accountRepositoryPort.findById(command.toAccountId())
-                .orElseThrow(() -> new AccountNotFoundException("Target account not found"));
-
-        // Prepare data
-        Money amount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
+        Money amount = toMoney(command.amount(), command.currency());
+        Money feeAmount = toFeeAmount(command);
         Description description = new Description(command.description());
 
-        Money feeAmount = null;
-        if (command.feeAmount() != null && command.feeAmount().compareTo(BigDecimal.ZERO) > 0 && command.feeCurrency() != null) {
-            feeAmount = Money.of(command.feeAmount(), MoneyCurrency.ofCode(command.feeCurrency()));
-        }
-
-        // Prepare transactions
-        ReferenceNumber refOut = ReferenceNumber.generate();
-        ReferenceNumber refIn = ReferenceNumber.generate();
-
-        Transaction txOut = Transaction.createNew(sourceAccount.getId(), TransactionType.TRANSFER_OUT, amount, sourceAccount.getBalance(), description, refOut);
-        Transaction txIn = Transaction.createNew(targetAccount.getId(), TransactionType.TRANSFER_IN, amount, targetAccount.getBalance(), description, refIn);
-
-        Transaction savedTxOut = transactionRepositoryPort.save(txOut);
-        Transaction savedTxIn = transactionRepositoryPort.save(txIn);
-
-        Transaction savedTxFee = null;
-        if (feeAmount != null) {
-            Transaction txFee = Transaction.createNew(sourceAccount.getId(), TransactionType.FEE, feeAmount, sourceAccount.getBalance(), new Description("Transfer Fee"), ReferenceNumber.generate());
-            savedTxFee = transactionRepositoryPort.save(txFee);
-        }
-
         try {
-            // Pending transactions
-            transferDomainService.transfer(sourceAccount, targetAccount, amount, description, feeAmount);
-
-            accountRepositoryPort.save(sourceAccount);
-            accountRepositoryPort.save(targetAccount);
-
-            // Complete transactions
-            savedTxOut.markCompleted();
-            savedTxIn.markCompleted();
-
-            transactionRepositoryPort.save(savedTxOut);
-            transactionRepositoryPort.save(savedTxIn);
-
-            if (savedTxFee != null)
-                transactionRepositoryPort.save(savedTxFee);
-
-            Transfer transfer = Transfer.createNew(
-                    sourceAccount.getId(),
-                    targetAccount.getId(),
-                    savedTxOut.getId(),
-                    savedTxIn.getId(),
-                    amount,
-                    description,
-                    feeAmount,
-                    savedTxFee != null ? savedTxFee.getId() : null,
-                    idempotencyKey
+            TransferExecution execution = transferDomainService.execute(
+                    sourceAccount, targetAccount, amount, description, feeAmount, idempotencyKey
             );
 
-            Transfer transferSaved = transferRepositoryPort.save(transfer);
+            persistExecution(execution, sourceAccount, targetAccount);
 
-            log.info("Transfer completed successfully from account {} to account {} for amount {} {}", command.fromAccountId(), command.toAccountId(), command.amount(), command.currency());
+            log.info("Transfer completed successfully for idempotency key {}", idempotencyKey.value());
+            return TransferDomainMapper.toResult(execution.transfer());
 
-            return TransferDomainMapper.toResult(transferSaved);
         } catch (DomainException e) {
-            log.error("Transfer failed for idempotency key {}: {}", command.idempotencyKey(), e.getMessage());
-
-            savedTxOut.markFailed();
-            savedTxIn.markFailed();
-
-            transactionRepositoryPort.save(savedTxOut);
-            transactionRepositoryPort.save(savedTxIn);
-
-            if (savedTxFee != null) {
-                savedTxFee.markFailed();
-                transactionRepositoryPort.save(savedTxFee);
-            }
-
+            log.error("Transfer failed: {}", e.getMessage());
             throw e;
         }
     }
@@ -136,8 +76,52 @@ public class TransferService implements
     @Override
     public TransferResult findById(UUID transferId) {
         Transfer transfer = transferRepositoryPort.findById(transferId)
-                .orElseThrow(() -> new TransferNotFoundException("Transfer with id: " + transferId + " not found"));
+                .orElseThrow(() -> new TransferNotFoundException("Transfer not found: " + transferId));
 
         return TransferDomainMapper.toResult(transfer);
+    }
+
+    private Account findAccount(UUID accountId, String label) {
+        return accountRepositoryPort.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException(label + " account not found"));
+    }
+
+    private Money toMoney(BigDecimal amount, String currency) {
+        return Money.of(amount, MoneyCurrency.ofCode(currency));
+    }
+
+    private Money toFeeAmount(TransferMoneyCommand command) {
+        if (command.feeAmount() == null || command.feeCurrency() == null) {
+            return null;
+        }
+        if (command.feeAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        return Money.of(command.feeAmount(), MoneyCurrency.ofCode(command.feeCurrency()));
+    }
+
+    private void persistExecution(TransferExecution execution, Account sourceAccount, Account targetAccount) {
+        Transaction savedDebit = transactionRepositoryPort.save(execution.debitTransaction());
+        Transaction savedCredit = transactionRepositoryPort.save(execution.creditTransaction());
+
+        Transaction savedFee = null;
+        if (execution.hasFee()) {
+            savedFee = transactionRepositoryPort.save(execution.feeTransaction());
+        }
+
+        accountRepositoryPort.save(sourceAccount);
+        accountRepositoryPort.save(targetAccount);
+
+        savedDebit.markCompleted();
+        savedCredit.markCompleted();
+        transactionRepositoryPort.save(savedDebit);
+        transactionRepositoryPort.save(savedCredit);
+
+        if (savedFee != null) {
+            savedFee.markCompleted();
+            transactionRepositoryPort.save(savedFee);
+        }
+
+        transferRepositoryPort.save(execution.transfer());
     }
 }
