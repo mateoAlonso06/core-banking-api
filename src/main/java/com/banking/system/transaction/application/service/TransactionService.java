@@ -5,11 +5,18 @@ import com.banking.system.account.domain.model.Account;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import com.banking.system.transaction.application.dto.command.DepositMoneyCommand;
+import com.banking.system.transaction.application.dto.command.WithdrawMoneyCommand;
+import com.banking.system.transaction.application.dto.result.TransactionResult;
+import com.banking.system.transaction.application.mapper.TransactionDomainMapper;
 import com.banking.system.transaction.application.usecase.DepositUseCase;
+import com.banking.system.transaction.application.usecase.GetAllTransactionsByAccountUseCase;
+import com.banking.system.transaction.application.usecase.WithdrawUseCase;
 import com.banking.system.transaction.domain.exception.AccountAccessDeniedException;
 import com.banking.system.transaction.domain.exception.KycNotApprovedException;
 import com.banking.system.transaction.domain.model.Description;
@@ -27,16 +34,19 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TransactionService implements DepositUseCase {
+public class TransactionService implements
+        DepositUseCase,
+        WithdrawUseCase,
+        GetAllTransactionsByAccountUseCase {
     private final TransactionRepositoryPort transactionRepositoryPort;
     private final CustomerRepositoryPort customerRepositoryPort;
     private final AccountRepositoryPort accountRepositoryPort;
 
     @Override
     @Transactional
-    public void deposit(DepositMoneyCommand command, UUID userId) {
+    public void deposit(DepositMoneyCommand command, UUID accountId, UUID userId) {
         log.info("Starting deposit process for userId: {}", userId);
-        Account account = getAuthorizedAccount(command.accountId(), userId);
+        Account account = getAuthorizedAccount(accountId, userId);
         Money depositAmount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
 
         account.credit(depositAmount);
@@ -54,6 +64,41 @@ public class TransactionService implements DepositUseCase {
         transactionRepositoryPort.save(transaction);
 
         log.info("Deposit of {} to accountId: {} completed successfully", depositAmount, account.getId());
+    }
+
+    @Override
+    @Transactional
+    public void withdraw(WithdrawMoneyCommand command, UUID accountId, UUID userId) {
+        log.info("Starting withdrawal process for usedId: {}", userId);
+
+        Account account = getAuthorizedAccount(accountId, userId);
+        account.debit(Money.of(command.amount(), MoneyCurrency.ofCode(command.currency())));
+        accountRepositoryPort.save(account);
+
+        Transaction transaction = Transaction.createNew(
+                account.getId(),
+                TransactionType.WITHDRAWAL,
+                Money.of(command.amount(), MoneyCurrency.ofCode(command.currency())),
+                account.getBalance(),
+                new Description("Withdrawal of " + command.amount() + " from account " + account.getAccountNumber()),
+                ReferenceNumber.generate()
+        );
+
+        transactionRepositoryPort.save(transaction);
+    }
+
+    /*For the history*/
+    @Override
+    public PagedResult<TransactionResult> getAllTransactionsByAccountId(UUID accountId, UUID userId, PageRequest pageRequest) {
+        log.info("Fetching transactions for accountId: {} by userId: {}", accountId, userId);
+
+        Account account = this.getAuthorizedAccount(accountId, userId);
+
+        PagedResult<Transaction> transactionsPage = transactionRepositoryPort.findAllTransactionsByAccountId(pageRequest, accountId);
+
+        log.info("Fetched {} transactions for accountId: {}", transactionsPage.items().size(), accountId);
+
+        return PagedResult.mapContent(transactionsPage, TransactionDomainMapper::toResult);
     }
 
     /*Gets the account if the user is authorized and KYC is approved*/

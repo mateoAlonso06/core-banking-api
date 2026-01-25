@@ -1,14 +1,17 @@
 package com.banking.system.transaction.infraestructure.adapter.out.persistence.repository;
 
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.domain.model.Transfer;
 import com.banking.system.transaction.domain.port.out.TransferRepositoryPort;
 import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransferJpaEntityMapper;
 import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
 import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransferJpaEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,26 +55,18 @@ public class TransferRepositoryAdapter implements TransferRepositoryPort {
 
     @Override
     public Optional<Transfer> findById(UUID id) {
-        return Optional.empty();
+        var transferJpaEntity = transferJpaRepository.findById(id);
+        return transferJpaEntity.map(TransferJpaEntityMapper::toDomainEntity);
     }
 
     @Override
-    public List<Transfer> findAll(int page, int size) {
-        return List.of();
-    }
-
-    @Override
-    public void deleteById(UUID id) {
-
-    }
-
-    @Override
-    public Optional<Transfer> findByAccountId(UUID accountId) {
-        return Optional.empty();
+    public PagedResult<Transfer> getALlTransactionsByAccountId(PageRequest request, UUID accountId, UUID userId) {
+        return null;
     }
 
     @Override
     public Optional<Transfer> findByIdempotencyKey(String idempotencyKey) {
-        return Optional.empty();
+        var transferJpaEntity = transferJpaRepository.findByIdempotencyKey(idempotencyKey);
+        return transferJpaEntity.map(TransferJpaEntityMapper::toDomainEntity);
     }
 }

@@ -5,5 +5,5 @@ import com.banking.system.transaction.application.dto.command.DepositMoneyComman
 import java.util.UUID;
 
 public interface DepositUseCase {
-    void deposit(DepositMoneyCommand command, UUID userId);
+    void deposit(DepositMoneyCommand command, UUID accountId, UUID userId);
 }

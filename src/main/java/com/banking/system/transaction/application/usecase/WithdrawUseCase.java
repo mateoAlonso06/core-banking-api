@@ -1,9 +1,9 @@
 package com.banking.system.transaction.application.usecase;
 
-import com.banking.system.common.domain.Money;
+import com.banking.system.transaction.application.dto.command.WithdrawMoneyCommand;
 
 import java.util.UUID;
 
 public interface WithdrawUseCase {
-    void withdraw(UUID accountId, Money amount);
+    void withdraw(WithdrawMoneyCommand command, UUID accountId, UUID userId);
 }

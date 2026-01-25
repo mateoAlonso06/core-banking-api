@@ -39,8 +39,7 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     @Override
     @Transactional
     public TransferResult transfer(TransferMoneyCommand command) {
-        log.info("Initiating transfer from account {} to account {}",
-                command.fromAccountId(), command.toAccountId());
+        log.info("Initiating transfer from account {} to account {}", command.fromAccountId(), command.toAccountId());
 
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
 
@@ -74,6 +73,7 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TransferResult findById(UUID transferId) {
         Transfer transfer = transferRepositoryPort.findById(transferId)
                 .orElseThrow(() -> new TransferNotFoundException("Transfer not found: " + transferId));

@@ -1,5 +1,8 @@
 package com.banking.system.transaction.infraestructure.adapter.out.persistence.repository;
 
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
+import com.banking.system.common.infraestructure.mapper.PageMapper;
 import com.banking.system.transaction.domain.model.Transaction;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransactionJpaEntityMapper;
@@ -7,7 +10,6 @@ import com.banking.system.transaction.infraestructure.adapter.out.persistence.en
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,12 +39,16 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
 
     @Override
     public Optional<Transaction> findById(UUID transactionId) {
-        return null;
+        var transactionJpaEntity = transactionJpaRepository.findById(transactionId);
+        return transactionJpaEntity
+                .map(TransactionJpaEntityMapper::toDomainEntity);
     }
 
     @Override
-    public List<Transaction> findAll(int size, int page) {
-        return List.of();
+    public PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId) {
+        var pageable = PageMapper.toPageable(pageRequest);
+        var page = transactionJpaRepository.findAllByAccountId(accountId, pageable);
+        return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
     }
 
     @Override

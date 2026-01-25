@@ -2,7 +2,6 @@ package com.banking.system.transaction.domain.service;
 
 import com.banking.system.account.domain.model.Account;
 import com.banking.system.common.domain.Money;
-import com.banking.system.transaction.domain.exception.InvalidTransferException;
 import com.banking.system.transaction.domain.exception.SameAccountTransferException;
 import com.banking.system.transaction.domain.model.*;
 import org.springframework.stereotype.Component;
@@ -40,7 +39,7 @@ public class TransferDomainService {
             Money feeAmount,
             IdempotencyKey idempotencyKey
     ) {
-        validateTransfer(sourceAccount, targetAccount, amount);
+        validateDifferentAccounts(sourceAccount, targetAccount);
 
         Transaction debitTx = createDebitTransaction(sourceAccount, amount, description);
         Transaction creditTx = createCreditTransaction(targetAccount, amount, description);
@@ -55,14 +54,6 @@ public class TransferDomainService {
         );
 
         return new TransferExecution(debitTx, creditTx, feeTx, transfer);
-    }
-
-    private void validateTransfer(Account sourceAccount, Account targetAccount, Money amount) {
-        validateDifferentAccounts(sourceAccount, targetAccount);
-
-        if (!sourceAccount.isActive() || !targetAccount.isActive()) {
-            throw new InvalidTransferException("Both accounts must be active for transfer");
-        }
     }
 
     private void validateDifferentAccounts(Account sourceAccount, Account targetAccount) {
@@ -114,7 +105,6 @@ public class TransferDomainService {
             Money feeAmount
     ) {
         Money totalDebit = feeAmount != null ? amount.add(feeAmount) : amount;
-        // the currency's are validated in this operations internally
         sourceAccount.debit(totalDebit);
         targetAccount.credit(amount);
     }
