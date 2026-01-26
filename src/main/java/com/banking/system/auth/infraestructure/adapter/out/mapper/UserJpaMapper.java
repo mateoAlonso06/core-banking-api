@@ -2,7 +2,9 @@ package com.banking.system.auth.infraestructure.adapter.out.mapper;
 
 import com.banking.system.auth.domain.model.Email;
 import com.banking.system.auth.domain.model.Password;
+import com.banking.system.auth.domain.model.Role;
 import com.banking.system.auth.domain.model.User;
+import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.RoleJpaEntity;
 import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.UserJpaEntity;
 
 /**
@@ -15,6 +17,9 @@ import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.Us
  * </p>
  */
 public class UserJpaMapper {
+
+    private UserJpaMapper() {
+    }
 
     /**
      * Converts a JPA entity from the persistence layer to a domain entity.
@@ -29,12 +34,16 @@ public class UserJpaMapper {
      * @return the reconstituted domain entity, or null if entity is null
      */
     public static User toDomain(UserJpaEntity entity) {
+        if (entity == null) return null;
+
+        Role role = RoleJpaMapper.toDomain(entity.getRole());
+
         return User.reconsitute(
                 entity.getId(),
                 new Email(entity.getEmail()),
                 Password.fromHash(entity.getPasswordHash()),
                 entity.getStatus(),
-                entity.getRole()
+                role
         );
     }
 
@@ -46,17 +55,19 @@ public class UserJpaMapper {
      * are managed by JPA lifecycle hooks and not set here.
      * </p>
      *
-     * @param user the domain entity to persist
+     * @param user       the domain entity to persist
+     * @param roleEntity the JPA role entity to associate with the user
      * @return the JPA entity ready for persistence
      */
-    public static UserJpaEntity toJpaEntity(User user) {
+    public static UserJpaEntity toJpaEntity(User user, RoleJpaEntity roleEntity) {
+        if (user == null) return null;
 
         UserJpaEntity entity = new UserJpaEntity();
         entity.setId(user.getId());
         entity.setEmail(user.getEmail().value());
         entity.setPasswordHash(user.getPassword().value());
         entity.setStatus(user.getStatus());
-        entity.setRole(user.getRole());
+        entity.setRole(roleEntity);
 
         return entity;
     }

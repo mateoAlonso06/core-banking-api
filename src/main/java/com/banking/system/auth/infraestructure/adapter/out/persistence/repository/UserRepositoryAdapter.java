@@ -3,6 +3,7 @@ package com.banking.system.auth.infraestructure.adapter.out.persistence.reposito
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import com.banking.system.auth.domain.model.User;
 import com.banking.system.auth.infraestructure.adapter.out.mapper.UserJpaMapper;
+import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.RoleJpaEntity;
 import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.UserJpaEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class UserRepositoryAdapter implements UserRepositoryPort {
 
     private final SpringDataUserRepository springDataUserRepository;
+    private final SpringDataRoleRepository springDataRoleRepository;
 
     @Override
     public List<User> findAll(int page, int size) {
@@ -48,7 +50,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
     @Override
     public User save(User user) {
-        UserJpaEntity userJpaEntity = UserJpaMapper.toJpaEntity(user);
+        RoleJpaEntity roleEntity = springDataRoleRepository.findByName(user.getRole().getName())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Role not found in database: " + user.getRole().getName()));
+
+        UserJpaEntity userJpaEntity = UserJpaMapper.toJpaEntity(user, roleEntity);
         UserJpaEntity savedEntity = springDataUserRepository.save(userJpaEntity);
 
         return UserJpaMapper.toDomain(savedEntity);

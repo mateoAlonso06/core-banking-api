@@ -1,5 +1,7 @@
 package com.banking.system.customer.domain.port.out;
 
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.domain.model.Customer;
 
 import java.util.List;
@@ -7,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CustomerRepositoryPort {
-    List<Customer> findAll(int page, int size);
+    PagedResult<Customer> findAll(PageRequest pageRequest);
 
     Optional<Customer> findById(UUID id);
 

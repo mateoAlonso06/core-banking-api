@@ -24,10 +24,10 @@ import com.banking.system.transaction.domain.model.ReferenceNumber;
 import com.banking.system.transaction.domain.model.Transaction;
 import com.banking.system.transaction.domain.model.TransactionType;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -62,7 +62,6 @@ public class TransactionService implements
         );
 
         transactionRepositoryPort.save(transaction);
-
         log.info("Deposit of {} to accountId: {} completed successfully", depositAmount, account.getId());
     }
 
@@ -85,18 +84,15 @@ public class TransactionService implements
         );
 
         transactionRepositoryPort.save(transaction);
+        log.info("Withdrawal of {} from accountId: {} completed successfully", command.amount(), account.getId());
     }
 
     /*For the history*/
     @Override
+    @Transactional(readOnly = true)
     public PagedResult<TransactionResult> getAllTransactionsByAccountId(UUID accountId, UUID userId, PageRequest pageRequest) {
-        log.info("Fetching transactions for accountId: {} by userId: {}", accountId, userId);
-
         Account account = this.getAuthorizedAccount(accountId, userId);
-
         PagedResult<Transaction> transactionsPage = transactionRepositoryPort.findAllTransactionsByAccountId(pageRequest, accountId);
-
-        log.info("Fetched {} transactions for accountId: {}", transactionsPage.items().size(), accountId);
 
         return PagedResult.mapContent(transactionsPage, TransactionDomainMapper::toResult);
     }

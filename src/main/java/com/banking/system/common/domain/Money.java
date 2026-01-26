@@ -1,6 +1,6 @@
 package com.banking.system.common.domain;
 
-import com.banking.system.common.CurrencyMismatchException;
+import com.banking.system.common.domain.exception.CurrencyMismatchException;
 import lombok.Getter;
 
 import java.math.BigDecimal;

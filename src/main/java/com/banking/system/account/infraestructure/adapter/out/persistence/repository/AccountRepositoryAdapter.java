@@ -3,8 +3,13 @@ package com.banking.system.account.infraestructure.adapter.out.persistence.repos
 import com.banking.system.account.domain.model.Account;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.account.infraestructure.adapter.out.mapper.AccountJpaMapper;
+import com.banking.system.account.infraestructure.adapter.out.persistence.entity.AccountJpaEntity;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
+import com.banking.system.common.infraestructure.mapper.PageMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -45,11 +50,11 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     }
 
     @Override
-    public List<Account> findAll(int page, int size) {
-        var pageable = PageRequest.of(page, size);
-        return springDataAccountRepository.findAll(pageable)
-                .map(AccountJpaMapper::toDomainEntity)
-                .toList();
+    public PagedResult<Account> findAll(PageRequest pageRequest) {
+        var pageable = PageMapper.toPageable(pageRequest);
+        var page = springDataAccountRepository.findAll(pageable);
+
+        return PageMapper.toPagedResult(page, AccountJpaMapper::toDomainEntity);
     }
 
     @Override

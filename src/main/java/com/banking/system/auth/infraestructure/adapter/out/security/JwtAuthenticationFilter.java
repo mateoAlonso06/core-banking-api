@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -37,19 +39,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userIdStr = jwtTokenProvider.getUserIdFromToken(token);
                 UUID userId = UUID.fromString(userIdStr);
                 String role = jwtTokenProvider.getRoleFromToken(token);
+                List<String> permissions = jwtTokenProvider.getPermissionsFromToken(token);
+
+                List<GrantedAuthority> authorities = new ArrayList<>();
+                // Add role authority with ROLE_ prefix for hasRole() checks
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                // Add permission authorities for hasAuthority() checks
+                if (permissions != null) {
+                    permissions.forEach(perm ->
+                            authorities.add(new SimpleGrantedAuthority(perm))
+                    );
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                        new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JWTVerificationException ex) {
-            // Token inválido, no autenticar
             logger.error("JWT verification failed: " + ex.getMessage());
         }
 
@@ -59,9 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        boolean skip = path.startsWith("/api/v1/auth/");
-        System.out.println("=== JWT Filter Check - Path: " + path + ", Skip: " + skip);
-        return skip;
+        return path.startsWith("/api/v1/auth/");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

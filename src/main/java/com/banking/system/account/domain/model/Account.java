@@ -1,7 +1,7 @@
 package com.banking.system.account.domain.model;
 
 import com.banking.system.account.domain.exception.AccountNotActiveException;
-import com.banking.system.common.CurrencyMismatchException;
+import com.banking.system.common.domain.exception.CurrencyMismatchException;
 import com.banking.system.account.domain.exception.InsufficientFundsException;
 import com.banking.system.account.domain.exception.InvalidAmountException;
 import com.banking.system.common.domain.Money;

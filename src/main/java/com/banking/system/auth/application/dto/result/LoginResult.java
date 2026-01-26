@@ -1,13 +1,13 @@
 package com.banking.system.auth.application.dto.result;
 
-import com.banking.system.auth.domain.model.Role;
+import com.banking.system.auth.domain.model.RoleName;
 
 import java.util.UUID;
 
 public record LoginResult(
         UUID id,
         String email,
-        Role role,
+        RoleName role,
         String token
 ) {
 }

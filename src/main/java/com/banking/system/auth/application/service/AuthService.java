@@ -16,8 +16,10 @@ import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
 import com.banking.system.auth.domain.exception.UserNotFoundException;
 import com.banking.system.auth.domain.model.Email;
 import com.banking.system.auth.domain.model.Password;
+import com.banking.system.auth.domain.model.Role;
 import com.banking.system.auth.domain.model.User;
 import com.banking.system.auth.domain.port.out.PasswordHasher;
+import com.banking.system.auth.domain.port.out.RoleRepositoryPort;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class AuthService implements
         ChangePasswordUseCase {
 
     private final UserRepositoryPort userRepository;
+    private final RoleRepositoryPort roleRepository;
     private final UserEventPublisher userEventPublisher;
     private final PasswordHasher passwordHasher;
     private final TokenGenerator tokenGenerator;
@@ -50,16 +53,18 @@ public class AuthService implements
         if (!passwordHasher.verify(command.password(), user.getPassword().value()))
             throw new InvalidCredentalsException("Invalid credentials");
 
+        Role role = user.getRole();
         String token = tokenGenerator.generateToken(
                 user.getId(),
                 user.getEmail().value(),
-                user.getRole().name()
+                role.getName().name(),
+                role.getPermissionCodes()
         );
 
         return new LoginResult(
                 user.getId(),
                 user.getEmail().value(),
-                user.getRole(),
+                role.getName(),
                 token
         );
     }
@@ -75,9 +80,13 @@ public class AuthService implements
         Password plainPassword = Password.fromPlainPassword(command.password());
         Password hashedPassword = Password.fromHash(passwordHasher.hash(plainPassword.value()));
 
+        // Get default role (CUSTOMER) from database
+        Role defaultRole = roleRepository.getDefaultRole();
+
         User user = User.createNew(
                 new Email(command.email()),
-                hashedPassword
+                hashedPassword,
+                defaultRole
         );
         User savedUser = userRepository.save(user);
 

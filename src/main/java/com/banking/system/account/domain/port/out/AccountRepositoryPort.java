@@ -1,6 +1,8 @@
 package com.banking.system.account.domain.port.out;
 
 import com.banking.system.account.domain.model.Account;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +19,7 @@ public interface AccountRepositoryPort {
 
     boolean existsByAlias(String alias);
 
-    List<Account> findAll(int page, int size);
+    PagedResult<Account> findAll(PageRequest pageRequest);
 
     boolean existsUsdAccount(UUID customerId);
 }

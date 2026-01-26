@@ -1,27 +1,28 @@
 package com.banking.system.customer.application.service;
 
-import com.banking.system.common.domain.exception.BusinessRuleException;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.mapper.CustomerMapper;
 import com.banking.system.customer.application.usecase.*;
 import com.banking.system.customer.domain.exception.CustomerAlreadyExistsException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
-import com.banking.system.customer.domain.exception.KycIsAlreadyProccedException;
-import com.banking.system.customer.domain.model.RiskLevel;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CustomerService implements
         CreateCustomerUseCase,
         GetCustomerUseCase,
+        GetAllCustomerUseCase,
         DeleteCustomerUseCase,
         ApproveKycUseCase,
         RejectKycUseCase {
@@ -30,16 +31,19 @@ public class CustomerService implements
 
     @Override
     @Transactional
-    public void deleteCustomerById(UUID id) {
-        if (!customerRepository.existsById(id)) {
-            throw new CustomerNotFoundException("Customer not found with id: " + id);
-        }
-
-        customerRepository.delete(id);
+    // TODO: safe delete operation
+    public void deleteCustomerById(UUID customerId) {
+        customerRepository.findById(customerId)
+                .orElseThrow(() -> {
+                            log.warn("Customer with id: {} not found", customerId);
+                            return new CustomerNotFoundException("Customer not found with id: " + customerId);
+                        }
+                );
+        customerRepository.delete(customerId);
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public CustomerResult getCustomerById(UUID id) {
         var customer = customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
@@ -48,27 +52,23 @@ public class CustomerService implements
     }
 
     @Override
-    @Transactional
-    public List<CustomerResult> getAll(int page, int size) {
-        if (page < 0 || size <= 0) {
-            throw new IllegalArgumentException("Page must be non-negative and size must be positive");
-        }
+    @Transactional(readOnly = true)
+    public CustomerResult getCustomerByUserId(UUID userId) {
+        var customer = customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user: " + userId));
 
-        var customers = customerRepository.findAll(page, size);
-
-        return customers.stream()
-                .map(CustomerResult::fromDomain)
-                .toList();
+        return CustomerResult.fromDomain(customer);
     }
 
     @Override
     @Transactional
     public CustomerResult createCustomer(CreateCustomerCommand command) {
+        log.info("Creating customer with userId: {}", command.userId());
         // Ensures idempotency based on userId
         if (customerRepository.existsByUserId(command.userId())) {
             return customerRepository.findByUserId(command.userId())
                     .map(CustomerResult::fromDomain)
-                    .orElseThrow(); // nunca debería pasar
+                    .orElseThrow();
         }
 
         if (customerRepository.existsByDocumentNumber(command.documentNumber())) {
@@ -78,24 +78,40 @@ public class CustomerService implements
         var customer = CustomerMapper.toDomain(command);
         var customerSaved = customerRepository.save(customer);
 
+        log.info("Customer created with id: {}", customerSaved.getId());
+
         return CustomerResult.fromDomain(customerSaved);
     }
 
     @Override
+    @Transactional
     public void approveKyc(UUID customerId) {
+        log.info("Approving KYC for customerId: {}", customerId);
         var customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + customerId));
 
         customer.approveKyc();
         customerRepository.save(customer);
+        log.info("KYC approved for customerId: {}", customerId);
     }
 
     @Override
+    @Transactional
     public void rejectKyc(UUID id) {
+        log.info("Rejecting KYC for customerId: {}", id);
         var customer = customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
 
         customer.rejectKyc();
         customerRepository.save(customer);
+        log.info("KYC rejected for customerId: {}", id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResult<CustomerResult> getAllCustomers(PageRequest pageRequest) {
+        var customers = customerRepository.findAll(pageRequest);
+
+        return PagedResult.mapContent(customers, CustomerResult::fromDomain);
     }
 }

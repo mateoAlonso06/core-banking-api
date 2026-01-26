@@ -6,16 +6,19 @@ import com.banking.system.account.application.usecase.CreateAccountUseCase;
 import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
 import com.banking.system.account.application.usecase.FindAllAccountUseCase;
 import com.banking.system.account.infraestructure.adapter.in.rest.dto.request.CreateAccountRequest;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,6 +30,7 @@ public class AccountRestController {
     private final FindAccountByIdUseCase findAccountByIdUseCase;
     private final FindAllAccountUseCase findAllAccountUseCase;
 
+    @PreAuthorize("hasAuthority('ACCOUNT_CREATE')")
     @PostMapping
     public ResponseEntity<AccountResult> createAccount(
             @AuthenticationPrincipal UUID userId,
@@ -50,16 +54,18 @@ public class AccountRestController {
         return ResponseEntity.created(location).body(result);
     }
 
+    @PreAuthorize("hasAnyAuthority('ACCOUNT_VIEW_OWN', 'ACCOUNT_VIEW_ALL')")
     @GetMapping
-    public ResponseEntity<List<AccountResult>> getAllAccounts(@RequestParam(defaultValue = "10", required = false) int size,
-                                                              @RequestParam(defaultValue = "0", required = false) int page) {
-        var results = findAllAccountUseCase.findAll(size, page);
+    public ResponseEntity<PagedResult<AccountResult>> getAllAccounts(Pageable pageable) {
+        var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        var results = findAllAccountUseCase.findAll(pageRequest);
 
         return ResponseEntity.ok().body(results);
     }
 
+    @PreAuthorize("hasAnyAuthority('ACCOUNT_VIEW_OWN', 'ACCOUNT_VIEW')")
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResult> getAllAccounts(@PathVariable @NotNull UUID id) {
+    public ResponseEntity<AccountResult> getAccountById(@PathVariable @NotNull UUID id) {
         var result = findAccountByIdUseCase.findById(id);
 
         return ResponseEntity.ok().body(result);

@@ -1,13 +1,13 @@
 package com.banking.system.customer.infraestructure.adapter.out.persistence.repository;
 
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import com.banking.system.customer.infraestructure.adapter.out.mapper.CustomerJpaEntityMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,11 +17,21 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
     private final SpringDataCustomerRepository springDataCustomerRepository;
 
     @Override
-    public List<Customer> findAll(int page, int size) {
-        var pageable = PageRequest.of(page, size);
-        return springDataCustomerRepository.findAll(pageable)
+    public PagedResult<Customer> findAll(PageRequest pageRequest) {
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                pageRequest.page(), pageRequest.size());
+        var page = springDataCustomerRepository.findAll(pageable);
+
+        var customers = page.getContent().stream()
                 .map(CustomerJpaEntityMapper::toDomainEntity)
                 .toList();
+
+        return PagedResult.of(
+                customers,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()
+        );
     }
 
     @Override

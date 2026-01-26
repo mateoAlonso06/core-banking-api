@@ -10,15 +10,14 @@ public class User {
     private final UUID id;
     private Email email;
     private Password password;
-    private UserStatus status; // ACTIVE, BLOCKED, PENDING_VERIFICATION
-    private Role role; // CUSTOMER, ADMIN, BRANCH_MANAGER
+    private UserStatus status;
+    private Role role;
 
-    public User(UUID id, Email email, Password password, UserStatus status, Role role) {
-
-        Objects.requireNonNull(email);
-        Objects.requireNonNull(password);
-        Objects.requireNonNull(status);
-        Objects.requireNonNull(role);
+    private User(UUID id, Email email, Password password, UserStatus status, Role role) {
+        Objects.requireNonNull(email, "email cannot be null");
+        Objects.requireNonNull(password, "password cannot be null");
+        Objects.requireNonNull(status, "status cannot be null");
+        Objects.requireNonNull(role, "role cannot be null");
 
         this.id = id;
         this.email = email;
@@ -33,21 +32,21 @@ public class User {
      * This method should be used when registering a brand new user that does not
      * yet exist in the persistence layer. It intentionally sets the {@code id}
      * to {@code null} so that the persistence mechanism can generate it, and
-     * initializes the user in the {@link UserStatus#PENDING_VERIFICATION}
-     * state with the default {@link Role#CUSTOMER} role.
+     * initializes the user in the {@link UserStatus#PENDING_VERIFICATION} state.
      * </p>
      *
      * @param email    {@link Email} value object containing a validated email address (must not be {@code null})
      * @param password {@link Password} value object containing an already hashed password (must not be {@code null})
+     * @param role     the {@link Role} to assign to this user (must not be {@code null})
      * @return a new {@link User} instance representing a non-persisted user awaiting verification
      */
-    public static User createNew(Email email, Password password) {
+    public static User createNew(Email email, Password password, Role role) {
         return new User(
                 null,
                 email,
                 password,
                 UserStatus.PENDING_VERIFICATION,
-                Role.CUSTOMER
+                role
         );
     }
 

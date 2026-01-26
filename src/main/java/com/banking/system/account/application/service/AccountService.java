@@ -16,6 +16,8 @@ import com.banking.system.account.domain.port.out.AccountAliasGenerator;
 import com.banking.system.account.domain.port.out.AccountNumberGenerator;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.MoneyCurrency;
+import com.banking.system.common.domain.PageRequest;
+import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -105,20 +107,10 @@ public class AccountService implements
 
     @Override
     @Transactional(readOnly = true)
-    public List<AccountResult> findAll(int page, int size) {
-        log.info("Fetching all accounts - page: {}, size: {}", page, size);
-        if (page < 0 || size <= 0) {
-            log.error("Invalid pagination parameters: page={}, size={}", page, size);
-            throw new IllegalArgumentException("Invalid pagination parameters: page must be >= 0 and size must be > 0.");
-        }
+    public PagedResult<AccountResult> findAll(PageRequest pageRequest) {
+        var accounts = accountRepositoryPort.findAll(pageRequest);
 
-        var accounts = accountRepositoryPort.findAll(page, size);
-
-        log.debug("Found {} accounts", accounts.size());
-
-        return accounts.stream()
-                .map(AccountResult::fromDomain)
-                .toList();
+        return PagedResult.mapContent(accounts, AccountResult::fromDomain);
     }
 
     /**
