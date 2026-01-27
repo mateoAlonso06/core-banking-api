@@ -2,7 +2,11 @@ package com.banking.system.customer.application.service;
 
 import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
+import com.banking.system.common.domain.Address;
+import com.banking.system.common.domain.PersonName;
+import com.banking.system.common.domain.Phone;
 import com.banking.system.customer.application.dto.command.CreateCustomerCommand;
+import com.banking.system.customer.application.dto.command.UpdateCustomerCommand;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.mapper.CustomerMapper;
 import com.banking.system.customer.application.usecase.*;
@@ -25,7 +29,8 @@ public class CustomerService implements
         GetAllCustomerUseCase,
         DeleteCustomerUseCase,
         ApproveKycUseCase,
-        RejectKycUseCase {
+        RejectKycUseCase,
+        UpdateCustomerUseCase {
 
     private final CustomerRepositoryPort customerRepository;
 
@@ -105,6 +110,27 @@ public class CustomerService implements
         customer.rejectKyc();
         customerRepository.save(customer);
         log.info("KYC rejected for customerId: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public CustomerResult updateCustomer(UpdateCustomerCommand command, UUID userId) {
+        var customer = customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user: " + userId));
+
+        if (command.firstName() != null && command.lastName() != null) {
+            customer.updatePersonName(new PersonName(command.firstName(), command.lastName()));
+        }
+        if (command.phone() != null) {
+            customer.updatePhone(new Phone(command.phone()));
+        }
+        if (command.address() != null) {
+            var newAddress = new Address(command.address(), command.city(), command.country());
+            customer.updateAddress(newAddress);
+        }
+
+        var saved = customerRepository.save(customer);
+        return CustomerResult.fromDomain(saved);
     }
 
     @Override

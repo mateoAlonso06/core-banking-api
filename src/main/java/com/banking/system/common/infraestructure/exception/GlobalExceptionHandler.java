@@ -35,6 +35,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage());
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage());
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
         log.warn("Business rule violation: {}", ex.getMessage());
@@ -76,7 +82,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         log.error("Unexpected error", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
-                "An unexpected error occurred. Please try again later.");
+                ex.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String error, String message) {

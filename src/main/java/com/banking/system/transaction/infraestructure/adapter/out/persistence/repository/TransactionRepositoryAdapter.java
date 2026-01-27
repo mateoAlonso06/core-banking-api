@@ -50,9 +50,4 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
         var page = transactionJpaRepository.findAllByAccountId(accountId, pageable);
         return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
     }
-
-    @Override
-    public void deleteTransaction(UUID transactionId) {
-
-    }
 }

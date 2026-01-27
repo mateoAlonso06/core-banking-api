@@ -1,12 +1,16 @@
 package com.banking.system.account.application.service;
 
 import com.banking.system.account.application.dto.command.CreateAccountCommand;
+import com.banking.system.account.application.dto.result.AccountBalanceResult;
+import com.banking.system.account.application.dto.result.AccountPublicResult;
 import com.banking.system.account.application.dto.result.AccountResult;
 import com.banking.system.account.application.event.AccountCreatedEvent;
 import com.banking.system.account.application.event.publisher.AccountEventPublisher;
 import com.banking.system.account.application.usecase.CreateAccountUseCase;
 import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
-import com.banking.system.account.application.usecase.FindAllAccountUseCase;
+import com.banking.system.account.application.usecase.FindAllAccountsByUserId;
+import com.banking.system.account.application.usecase.GetAccountBalanceUseCase;
+import com.banking.system.account.application.usecase.SearchAccountByAliasUseCase;
 import com.banking.system.account.domain.exception.AccountNotFoundException;
 import com.banking.system.account.domain.exception.AliasGenerationFailedException;
 import com.banking.system.account.domain.exception.InvalidAccountOwnerException;
@@ -16,8 +20,6 @@ import com.banking.system.account.domain.port.out.AccountAliasGenerator;
 import com.banking.system.account.domain.port.out.AccountNumberGenerator;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.MoneyCurrency;
-import com.banking.system.common.domain.PageRequest;
-import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,9 @@ import java.util.UUID;
 public class AccountService implements
         CreateAccountUseCase,
         FindAccountByIdUseCase,
-        FindAllAccountUseCase {
+        FindAllAccountsByUserId,
+        GetAccountBalanceUseCase,
+        SearchAccountByAliasUseCase {
 
     private static final int MAX_ALIAS_GENERATION_ATTEMPTS = 5;
 
@@ -45,12 +49,11 @@ public class AccountService implements
 
     @Override
     @Transactional
-    public AccountResult createAccount(CreateAccountCommand command) {
-        log.info("Creating account: userId={}, accountType={}, currency={}",
-                command.userId(), command.accountType(), command.currency());
+    public AccountResult createAccount(CreateAccountCommand command, UUID userId) {
+        log.info("Creating account: userId={}, accountType={}, currency={}", userId, command.accountType(), command.currency());
 
-        var customer = customerRepositoryPort.findByUserId(command.userId())
-                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for user ID " + command.userId()));
+        var customer = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for user ID " + userId));
 
         if (!customer.isKycApproved()) {
             log.debug("KYC not approved for customer: {}", customer.getId());
@@ -97,8 +100,23 @@ public class AccountService implements
 
     @Override
     @Transactional(readOnly = true)
-    public AccountResult findById(UUID accountId) {
-        log.debug("Finding account by id: {}", accountId);
+    public AccountResult findAccountByIdForCustomer(UUID accountId, UUID userId) {
+        var customerAssociatedWithAccount = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for account ID " + accountId));
+
+        var account = accountRepositoryPort.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("Account with ID " + accountId + " not found."));
+
+        if (!account.getCustomerId().equals(customerAssociatedWithAccount.getId())) {
+            throw new InvalidAccountOwnerException("Account with ID " + accountId + " does not belong to the customer.");
+        }
+
+        return AccountResult.fromDomain(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountResult findAccountById(UUID accountId) {
         var account = accountRepositoryPort.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account with ID " + accountId + " not found."));
 
@@ -107,10 +125,49 @@ public class AccountService implements
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResult<AccountResult> findAll(PageRequest pageRequest) {
-        var accounts = accountRepositoryPort.findAll(pageRequest);
+    public List<AccountResult> findAll(UUID userId) {
+        var customer = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for user ID " + userId));
 
-        return PagedResult.mapContent(accounts, AccountResult::fromDomain);
+        var accounts = accountRepositoryPort.findAllByCustomerId(customer.getId());
+
+        return accounts.stream()
+                .map(AccountResult::fromDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountBalanceResult getBalance(UUID accountId, UUID userId) {
+        var customer = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new InvalidAccountOwnerException("Customer not found for user ID " + userId));
+
+        var account = accountRepositoryPort.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("Account with ID " + accountId + " not found."));
+
+        if (!account.getCustomerId().equals(customer.getId())) {
+            throw new InvalidAccountOwnerException("Account with ID " + accountId + " does not belong to the customer.");
+        }
+
+        return AccountBalanceResult.fromDomain(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountPublicResult searchByAlias(String alias) {
+        var account = accountRepositoryPort.findByAlias(alias)
+                .orElseThrow(() -> new AccountNotFoundException("Account with alias '" + alias + "' not found."));
+
+        var customer = customerRepositoryPort.findById(account.getCustomerId())
+                .orElseThrow(() -> new AccountNotFoundException("Owner not found for account with alias '" + alias + "'."));
+
+        return new AccountPublicResult(
+                account.getAlias().value(),
+                customer.getPersonName().fullName(),
+                customer.getIdentityDocument().number(),
+                account.getCurrency().code(),
+                account.getAccountType().name()
+        );
     }
 
     /**

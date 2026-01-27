@@ -4,7 +4,6 @@ import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.domain.model.Transaction;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +13,4 @@ public interface TransactionRepositoryPort {
     Optional<Transaction> findById(UUID transactionId);
 
     PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId);
-
-    void deleteTransaction(UUID transactionId);
 }

@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -80,6 +81,7 @@ public class AuthRestController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @SecurityRequirement(name = "Bearer Authentication")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/change-password")
     public ResponseEntity<Void> changePassword(
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId,

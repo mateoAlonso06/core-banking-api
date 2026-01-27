@@ -1,41 +1,38 @@
 package com.banking.system.customer.infraestructure.adapter.in.rest.dto.request;
 
-import jakarta.validation.constraints.*;
-
-import java.time.LocalDate;
+import com.banking.system.customer.application.dto.command.UpdateCustomerCommand;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public record CustomerUpdateRequest(
-        @NotBlank(message = "First name is required")
         @Size(max = 100, message = "First name must not exceed 100 characters")
         String firstName,
 
-        @NotBlank(message = "Last name is required")
         @Size(max = 100, message = "Last name must not exceed 100 characters")
         String lastName,
-
-        @NotBlank(message = "Document type is required")
-        @Size(max = 20, message = "Document type must not exceed 20 characters")
-        String documentType,
-
-        @NotBlank(message = "Document number is required")
-        @Size(max = 50, message = "Document number must not exceed 50 characters")
-        String documentNumber,
-
-        @NotNull(message = "Birth date is required")
-        @Past(message = "Birth date must be in the past")
-        LocalDate birthDate,
 
         @Size(max = 50, message = "Phone must not exceed 50 characters")
         String phone,
 
-        @NotBlank
+        @Size(max = 200, message = "Address must not exceed 200 characters")
         String address,
 
-        @Size(max = 100, message = "City must not exceed 100 characters") @NotBlank
+        @Size(max = 100, message = "City must not exceed 100 characters")
         String city,
 
-        @Size(min = 2, max = 2, message = "Country must be a 2-character ISO code") @NotBlank
+        @Size(min = 2, max = 2, message = "Country must be a 2-character ISO code")
         @Pattern(regexp = "^[A-Z]{2}$", message = "Country must be uppercase ISO 3166-1 alpha-2 code")
         String country
 ) {
+    public UpdateCustomerCommand toCommand() {
+        if ((firstName != null) != (lastName != null)) {
+            throw new IllegalArgumentException("firstName and lastName must be provided together");
+        }
+        if (address != null || city != null || country != null) {
+            if (address == null || city == null || country == null) {
+                throw new IllegalArgumentException("address, city and country must be provided together");
+            }
+        }
+        return new UpdateCustomerCommand(firstName, lastName, phone, address, city, country);
+    }
 }

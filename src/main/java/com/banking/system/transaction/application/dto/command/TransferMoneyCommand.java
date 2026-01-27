@@ -5,7 +5,8 @@ import java.util.UUID;
 
 public record TransferMoneyCommand(
         UUID fromAccountId,
-        UUID toAccountId,
+        String toAlias,
+        String toAccountNumber,
         BigDecimal amount,
         String currency,
         BigDecimal feeAmount,

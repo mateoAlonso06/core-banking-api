@@ -6,7 +6,7 @@ import com.banking.system.customer.infraestructure.adapter.out.persistence.entit
 public class CustomerJpaEntityMapper {
     public static CustomerJpaEntity toJpaEntity(Customer customer) {
         return CustomerJpaEntity.builder()
-                .id(null)
+                .id(customer.getId() != null ? customer.getId() : null)
                 .userId(customer.getUserId())
                 .firstName(customer.getPersonName().firstName())
                 .lastName(customer.getPersonName().lastName())
@@ -20,6 +20,7 @@ public class CustomerJpaEntityMapper {
                 .customerSince(customer.getCustomerSince())
                 .kycStatus(customer.getKycStatus())
                 .riskLevel(customer.getRiskLevel())
+                .kycVerifiedAt(customer.getKycVerifiedAt())
                 .build();
     }
 

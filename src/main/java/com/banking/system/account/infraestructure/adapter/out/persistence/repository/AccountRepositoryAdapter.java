@@ -3,13 +3,7 @@ package com.banking.system.account.infraestructure.adapter.out.persistence.repos
 import com.banking.system.account.domain.model.Account;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.account.infraestructure.adapter.out.mapper.AccountJpaMapper;
-import com.banking.system.account.infraestructure.adapter.out.persistence.entity.AccountJpaEntity;
-import com.banking.system.common.domain.PageRequest;
-import com.banking.system.common.domain.dto.PagedResult;
-import com.banking.system.common.infraestructure.mapper.PageMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -45,20 +39,31 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     }
 
     @Override
+    public Optional<Account> findByAlias(String alias) {
+        return springDataAccountRepository.findByAlias(alias).map(AccountJpaMapper::toDomainEntity);
+    }
+
+    @Override
     public boolean existsByAlias(String alias) {
         return springDataAccountRepository.existsByAlias(alias);
     }
 
     @Override
-    public PagedResult<Account> findAll(PageRequest pageRequest) {
-        var pageable = PageMapper.toPageable(pageRequest);
-        var page = springDataAccountRepository.findAll(pageable);
-
-        return PageMapper.toPagedResult(page, AccountJpaMapper::toDomainEntity);
+    public boolean existsUsdAccount(UUID customerId) {
+        return springDataAccountRepository.existsByCustomerIdAndCurrency(customerId, "USD");
     }
 
     @Override
-    public boolean existsUsdAccount(UUID customerId) {
-        return springDataAccountRepository.existsByCustomerIdAndCurrency(customerId, "USD");
+    public List<Account> findAllByCustomerId(UUID customerId) {
+        var accounts = springDataAccountRepository.findAllByCustomerId(customerId);
+        return accounts.stream()
+                .map(AccountJpaMapper::toDomainEntity)
+                .toList();
+    }
+
+    @Override
+    public Optional<Account> findByCustomerId(UUID id) {
+        var account = springDataAccountRepository.findByCustomerId(id);
+        return account.map(AccountJpaMapper::toDomainEntity);
     }
 }

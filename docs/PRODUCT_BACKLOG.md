@@ -1,8 +1,8 @@
 # Product Backlog - Core Banking System (Billetera Virtual)
 
-> **Última actualización:** 2026-01-22
-> **Versión:** 1.0.0
-> **Estado del proyecto:** Pre-MVP
+> **Última actualización:** 2026-01-27
+> **Versión:** 1.1.0
+> **Estado del proyecto:** MVP Ready
 
 ---
 
@@ -15,19 +15,27 @@
 | Auth | Registro de usuarios | `POST /api/v1/auth/register` | ✅ Completo |
 | Auth | Login con JWT | `POST /api/v1/auth/login` | ✅ Completo |
 | Auth | Cambio de contraseña | `PUT /api/v1/auth/change-password` | ✅ Completo |
-| Customer | Consultar cliente | `GET /api/v1/customers/{id}` | ✅ Completo |
-| Customer | Listar clientes | `GET /api/v1/customers` | ✅ Completo |
-| Customer | Eliminar cliente | `DELETE /api/v1/customers/{id}` | ✅ Completo |
+| Customer | Consultar mi perfil | `GET /api/v1/customers/me` | ✅ Completo |
+| Customer | Consultar cliente (admin) | `GET /api/v1/customers/{id}` | ✅ Completo |
+| Customer | Listar clientes (admin) | `GET /api/v1/customers` | ✅ Completo |
+| Customer | Aprobar KYC (admin) | `PUT /api/v1/customers/{id}/kyc/approve` | ✅ Completo |
+| Customer | Rechazar KYC (admin) | `PUT /api/v1/customers/{id}/kyc/reject` | ✅ Completo |
 | Account | Crear cuenta | `POST /api/v1/accounts` | ✅ Completo |
-| Account | Consultar cuenta | `GET /api/v1/accounts/{id}` | ✅ Completo |
-| Account | Listar cuentas | `GET /api/v1/accounts` | ✅ Completo |
+| Account | Mis cuentas | `GET /api/v1/accounts/me` | ✅ Completo |
+| Account | Mi cuenta por ID | `GET /api/v1/accounts/me/{id}` | ✅ Completo |
+| Account | Consultar cuenta (admin) | `GET /api/v1/accounts/{id}` | ✅ Completo |
+| Transaction | Depósito | `POST /api/v1/transactions/accounts/{id}/deposits` | ✅ Completo |
+| Transaction | Retiro | `POST /api/v1/transactions/accounts/{id}/withdrawals` | ✅ Completo |
+| Transaction | Historial de cuenta | `GET /api/v1/transactions/accounts/{id}/transactions` | ✅ Completo |
 | Transfer | Transferir dinero | `POST /api/v1/transfers` | ✅ Completo |
-| Transfer | Consultar transferencia | `GET /api/v1/transfers/{id}` | ✅ Completo |
+| Transfer | Mi transferencia por ID | `GET /api/v1/transfers/me/{id}` | ✅ Completo |
+| Transfer | Consultar transferencia (admin) | `GET /api/v1/transfers/{id}` | ✅ Completo |
 
 ### Arquitectura Implementada
 
 - [x] Arquitectura Hexagonal (Ports & Adapters)
 - [x] Autenticación JWT stateless
+- [x] Sistema de permisos granular (authorities)
 - [x] Validación de dominio en entidades
 - [x] Manejo de excepciones global
 - [x] Mappers (MapStruct + manuales)
@@ -35,6 +43,8 @@
 - [x] Idempotencia en transferencias
 - [x] Migraciones con Flyway
 - [x] Dockerización (docker-compose)
+- [x] Documentación OpenAPI/Swagger en todos los endpoints
+- [x] Verificación de ownership en endpoints de cliente
 
 ---
 
@@ -61,135 +71,77 @@
 
 ---
 
-## 🔴 P0 - Funcionalidades Críticas (Bloqueantes MVP)
+## ✅ P0 - Funcionalidades Críticas (COMPLETADAS)
 
-### BACK-001: Gestión de KYC (Aprobar/Rechazar)
+### ~~BACK-001: Gestión de KYC (Aprobar/Rechazar)~~ ✅ COMPLETADO
 
-**Prioridad:** 🔴 P0
-**Estimación:** S
+**Estado:** ✅ Implementado
 **Módulo:** Customer
 
-**Descripción:**
-Actualmente los clientes se crean con estado KYC `PENDING`. Sin un endpoint para aprobar/rechazar KYC, ningún usuario puede crear cuentas bancarias (la creación de cuenta valida `KycStatus.APPROVED`).
-
-**Criterios de Aceptación:**
-- [ ] Endpoint `PUT /api/v1/customers/{id}/kyc/approve` para aprobar KYC
-- [ ] Endpoint `PUT /api/v1/customers/{id}/kyc/reject` para rechazar KYC
-- [ ] Solo usuarios con rol ADMIN pueden ejecutar estas operaciones
-- [ ] Al aprobar KYC, el campo `kycVerifiedAt` se actualiza con timestamp
-- [ ] Enviar notificación por email al cliente cuando se aprueba/rechaza
-
-**Notas Técnicas:**
-- Los métodos `approveKyc()` y `rejectKyc()` ya existen en el dominio `Customer`
-- Crear `ApproveKycUseCase` y `RejectKycUseCase`
-- Actualizar `CustomerController` con los nuevos endpoints
-
-**Archivos a modificar:**
-- `customer/application/usecase/` - Crear nuevos use cases
-- `customer/application/service/CustomerService.java` - Implementar métodos
-- `customer/infraestructure/adapter/in/rest/CustomerController.java` - Agregar endpoints
+**Implementación:**
+- `PUT /api/v1/customers/{id}/kyc/approve` - Aprobación de KYC
+- `PUT /api/v1/customers/{id}/kyc/reject` - Rechazo de KYC
+- Protegido con `KYC_APPROVE` y `KYC_REJECT` authorities
+- Documentación OpenAPI completa
 
 ---
 
-### BACK-002: Depósitos de Dinero
+### ~~BACK-002: Depósitos de Dinero~~ ✅ COMPLETADO
 
-**Prioridad:** 🔴 P0
-**Estimación:** M
+**Estado:** ✅ Implementado
 **Módulo:** Transaction
 
-**Descripción:**
-Los usuarios necesitan poder depositar dinero en sus cuentas. Actualmente solo existe la funcionalidad de transferencia entre cuentas internas.
-
-**Criterios de Aceptación:**
-- [ ] Endpoint `POST /api/v1/transactions/deposit`
-- [ ] Request: `accountId`, `amount`, `currency`, `description`, `idempotencyKey`
-- [ ] Validar que la cuenta existe y está activa
-- [ ] Validar que la moneda coincide con la cuenta
-- [ ] Crear transacción tipo `DEPOSIT` con estado `COMPLETED`
-- [ ] Actualizar balance de la cuenta
-- [ ] Retornar detalles de la transacción creada
-
-**Notas Técnicas:**
-- Implementar `DepositUseCase` (interfaz ya existe pero está vacía)
-- Crear `DepositCommand` con los campos necesarios
-- Crear `DepositResult` para la respuesta
-- Reutilizar `Account.credit()` para acreditar fondos
-
-**Consideraciones de Seguridad:**
-- En producción, los depósitos vendrían de integraciones externas (PSP, transferencias bancarias)
-- Para MVP, se puede simular como operación administrativa
+**Implementación:**
+- `POST /api/v1/transactions/accounts/{accountId}/deposits`
+- Validación de ownership y KYC aprobado
+- Protegido con `TRANSACTION_DEPOSIT` authority
+- Documentación OpenAPI completa
 
 ---
 
-### BACK-003: Retiros de Dinero
+### ~~BACK-003: Retiros de Dinero~~ ✅ COMPLETADO
 
-**Prioridad:** 🔴 P0
-**Estimación:** M
+**Estado:** ✅ Implementado
 **Módulo:** Transaction
 
-**Descripción:**
-Los usuarios necesitan poder retirar dinero de sus cuentas.
-
-**Criterios de Aceptación:**
-- [ ] Endpoint `POST /api/v1/transactions/withdraw`
-- [ ] Request: `accountId`, `amount`, `currency`, `description`, `idempotencyKey`
-- [ ] Validar que la cuenta existe y está activa
-- [ ] Validar que hay fondos suficientes
-- [ ] Validar que la moneda coincide
-- [ ] Crear transacción tipo `WITHDRAWAL` con estado `COMPLETED`
-- [ ] Actualizar balance de la cuenta
-- [ ] Retornar detalles de la transacción
-
-**Notas Técnicas:**
-- Implementar `WithdrawUseCase` (interfaz ya existe pero está vacía)
-- Reutilizar `Account.debit()` para debitar fondos
-- Considerar límites de retiro diario/mensual (campos ya existen en Account)
+**Implementación:**
+- `POST /api/v1/transactions/accounts/{accountId}/withdrawals`
+- Validación de fondos suficientes, ownership y KYC
+- Protegido con `TRANSACTION_WITHDRAW` authority
+- Documentación OpenAPI completa
 
 ---
 
-### BACK-004: Historial de Transacciones por Cuenta
+### ~~BACK-004: Historial de Transacciones por Cuenta~~ ✅ COMPLETADO
 
-**Prioridad:** 🔴 P0
-**Estimación:** M
-**Módulo:** Transaction / Account
+**Estado:** ✅ Implementado
+**Módulo:** Transaction
 
-**Descripción:**
-Los usuarios necesitan ver el historial de movimientos de sus cuentas.
+**Implementación:**
+- `GET /api/v1/transactions/accounts/{accountId}/transactions`
+- Paginación implementada
+- Validación de ownership
+- Protegido con `TRANSACTION_VIEW_OWN` authority
+- Documentación OpenAPI completa
 
-**Criterios de Aceptación:**
-- [ ] Endpoint `GET /api/v1/accounts/{accountId}/transactions`
-- [ ] Paginación: `page`, `size`
-- [ ] Filtros opcionales: `type`, `fromDate`, `toDate`, `status`
-- [ ] Ordenar por fecha descendente (más recientes primero)
-- [ ] Respuesta incluye: id, tipo, monto, moneda, descripción, fecha, estado, balance resultante
-- [ ] Validar que el usuario tiene acceso a la cuenta
-
-**Notas Técnicas:**
-- Crear query method en `TransactionRepositoryPort`
-- Puede requerir Specification pattern para filtros dinámicos
+**Pendiente para mejora futura:**
+- Filtros opcionales: `type`, `fromDate`, `toDate`, `status`
 
 ---
 
 ## 🟠 P1 - Funcionalidades de Alta Prioridad
 
-### BACK-005: Listar Cuentas del Usuario Autenticado
+### ~~BACK-005: Listar Cuentas del Usuario Autenticado~~ ✅ COMPLETADO
 
-**Prioridad:** 🟠 P1
-**Estimación:** S
+**Estado:** ✅ Implementado
 **Módulo:** Account
 
-**Descripción:**
-El endpoint actual `GET /accounts` lista TODAS las cuentas del sistema. Se necesita un endpoint que liste solo las cuentas del usuario autenticado.
-
-**Criterios de Aceptación:**
-- [ ] Endpoint `GET /api/v1/accounts/me` o modificar el existente
-- [ ] Filtrar por `customerId` del usuario autenticado
-- [ ] Mantener paginación
-- [ ] Respuesta igual a la actual pero filtrada
-
-**Notas Técnicas:**
-- Obtener `customerId` desde el `@AuthenticationPrincipal`
-- Agregar método `findByCustomerId` en repository
+**Implementación:**
+- `GET /api/v1/accounts/me` - Lista cuentas del usuario autenticado
+- `GET /api/v1/accounts/me/{id}` - Consulta cuenta específica con verificación de ownership
+- `GET /api/v1/accounts/{id}` - Solo para admin (`ACCOUNT_VIEW_ALL`)
+- Protegido con `ACCOUNT_VIEW_OWN` authority
+- Documentación OpenAPI completa
 
 ---
 
@@ -501,20 +453,17 @@ Implementar suite completa de tests de integración.
 
 ---
 
-### BACK-023: API Documentation (OpenAPI/Swagger)
+### ~~BACK-023: API Documentation (OpenAPI/Swagger)~~ ✅ COMPLETADO
 
-**Prioridad:** 🟢 P3
-**Estimación:** S
+**Estado:** ✅ Implementado
 **Módulo:** Infrastructure
 
-**Descripción:**
-Generar documentación automática de la API.
-
-**Criterios de Aceptación:**
-- [ ] Integrar SpringDoc OpenAPI
-- [ ] Swagger UI disponible en `/swagger-ui.html`
-- [ ] Documentar todos los endpoints, request/response schemas
-- [ ] Incluir ejemplos
+**Implementación:**
+- SpringDoc OpenAPI integrado
+- Swagger UI disponible
+- Todos los controladores documentados con `@Tag`, `@Operation`, `@ApiResponses`
+- `@SecurityRequirement` en endpoints protegidos
+- `@Parameter` para documentar path variables y request bodies
 
 ---
 
@@ -537,35 +486,39 @@ Implementar endpoints de health check y métricas para monitoreo en AWS.
 
 ## Roadmap Sugerido
 
-### Sprint 1 - MVP Core (P0)
-- BACK-001: Gestión de KYC
-- BACK-002: Depósitos
-- BACK-003: Retiros
-- BACK-004: Historial de Transacciones
+### ~~Sprint 1 - MVP Core (P0)~~ ✅ COMPLETADO
+- ~~BACK-001: Gestión de KYC~~ ✅
+- ~~BACK-002: Depósitos~~ ✅
+- ~~BACK-003: Retiros~~ ✅
+- ~~BACK-004: Historial de Transacciones~~ ✅
+- ~~BACK-005: Cuentas del usuario~~ ✅
+- ~~BACK-023: Documentación API~~ ✅
 
-### Sprint 2 - UX Básica (P1)
-- BACK-005: Cuentas del usuario
-- BACK-006: Consultar transacción
-- BACK-007: Actualizar cliente
-- BACK-008: Consultar balance
+### Sprint 2 - UX Mejorada (P1) ← **PRÓXIMO**
+- BACK-006: Consultar transacción individual
+- BACK-007: Actualizar datos del cliente
+- BACK-008: Consultar balance (endpoint dedicado)
 - BACK-009: Transferencias por alias
 
 ### Sprint 3 - Funcionalidades Complementarias (P2)
 - BACK-010: Cierre de cuenta
 - BACK-011: Límites de transacción
+- BACK-012: Gestión de nivel de riesgo
 - BACK-013: Notificaciones de transacciones
 - BACK-014: Búsqueda por alias
 
 ### Sprint 4 - Preparación Producción (P3 seleccionados)
-- BACK-023: Documentación API
-- BACK-024: Health checks
+- BACK-024: Health checks y métricas
 - BACK-022: Tests de integración
+- BACK-020: Rate limiting
 
 ### Futuro
-- Auditoría completa
-- MFA
-- Kafka
-- Reportes
+- BACK-015: Auditoría completa
+- BACK-019: MFA
+- BACK-021: Migración a Kafka
+- BACK-016: Reversión de transacciones
+- BACK-017: Cálculo de intereses
+- BACK-018: Reportes PDF/Excel
 
 ---
 
@@ -585,7 +538,7 @@ Implementar endpoints de health check y métricas para monitoreo en AWS.
 
 ### Pre-requisitos para Deploy
 
-- [ ] Implementar funcionalidades P0
+- [x] Implementar funcionalidades P0 ✅
 - [ ] BACK-024: Health checks (para ALB)
 - [ ] Configurar variables de entorno para producción
 - [ ] Configurar CORS para dominio de frontend
@@ -598,4 +551,5 @@ Implementar endpoints de health check y métricas para monitoreo en AWS.
 
 | Fecha | Versión | Cambios |
 |-------|---------|---------|
+| 2026-01-27 | 1.1.0 | Sprint 1 completado: P0 + BACK-005 + BACK-023. Sistema de permisos granular implementado. Verificación de ownership en todos los endpoints de cliente. |
 | 2026-01-22 | 1.0.0 | Creación inicial del backlog |

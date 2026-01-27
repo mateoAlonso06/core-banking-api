@@ -5,6 +5,7 @@ import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.application.dto.result.TransactionResult;
 import com.banking.system.transaction.application.usecase.DepositUseCase;
 import com.banking.system.transaction.application.usecase.GetAllTransactionsByAccountUseCase;
+import com.banking.system.transaction.application.usecase.GetTransactionByIdUseCase;
 import com.banking.system.transaction.application.usecase.WithdrawUseCase;
 import com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request.DepositMoneyRequest;
 import com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request.WithdrawMoneyRequest;
@@ -15,12 +16,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -28,11 +31,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Transactions", description = "Operations for deposits, withdrawals, and transaction history")
 @SecurityRequirement(name = "Bearer Authentication")
 public class TransactionRestController {
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
+    private final GetTransactionByIdUseCase getTransactionByIdUseCase;
     private final GetAllTransactionsByAccountUseCase getAllTransactionsByAccountUseCase;
 
     @Operation(
@@ -44,7 +49,8 @@ public class TransactionRestController {
             @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
             @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
             @ApiResponse(responseCode = "404", description = "Account or customer not found"),
-            @ApiResponse(responseCode = "422", description = "Business rule violation (inactive account, KYC not approved, currency mismatch, or access denied)")
+            @ApiResponse(responseCode = "403", description = "Account does not belong to the authenticated user"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (inactive account, KYC not approved, or currency mismatch)")
     })
     @PreAuthorize("hasAuthority('TRANSACTION_DEPOSIT')")
     @PostMapping("/accounts/{accountId}/deposits")
@@ -69,7 +75,8 @@ public class TransactionRestController {
             @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
             @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
             @ApiResponse(responseCode = "404", description = "Account or customer not found"),
-            @ApiResponse(responseCode = "422", description = "Business rule violation (insufficient funds, inactive account, KYC not approved, currency mismatch, or access denied)")
+            @ApiResponse(responseCode = "403", description = "Account does not belong to the authenticated user"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (insufficient funds, inactive account, KYC not approved, or currency mismatch)")
     })
     @PreAuthorize("hasAuthority('TRANSACTION_WITHDRAW')")
     @PostMapping("/accounts/{accountId}/withdrawals")
@@ -92,10 +99,11 @@ public class TransactionRestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
+            @ApiResponse(responseCode = "403", description = "Account does not belong to the authenticated user"),
             @ApiResponse(responseCode = "404", description = "Account or customer not found"),
-            @ApiResponse(responseCode = "422", description = "Business rule violation (KYC not approved or access denied)")
+            @ApiResponse(responseCode = "422", description = "Business rule violation (KYC not approved)")
     })
-    @PreAuthorize("hasAnyAuthority('TRANSACTION_VIEW_OWN', 'TRANSACTION_VIEW_ALL')")
+    @PreAuthorize("hasAuthority('TRANSACTION_VIEW_OWN')")
     @GetMapping("/accounts/{accountId}/transactions")
     public ResponseEntity<PagedResult<TransactionResult>> getAllTransactionsByAccount(
             @Parameter(description = "Account ID to retrieve transactions from", example = "550e8400-e29b-41d4-a716-446655440000")
@@ -106,5 +114,24 @@ public class TransactionRestController {
         var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         var result = getAllTransactionsByAccountUseCase.getAllTransactionsByAccountId(accountId, userId, pageRequest);
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "Get my transaction by ID",
+            description = "Retrieves the details of a specific transaction by its ID. Only returns transactions where the authenticated user is the account owner."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Transaction details retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
+            @ApiResponse(responseCode = "403", description = "Transaction does not belong to the authenticated user"),
+            @ApiResponse(responseCode = "404", description = "Transaction not found"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (KYC not approved)")
+    })
+    @PreAuthorize("hasAuthority('TRANSACTION_VIEW_OWN')")
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<TransactionResult> getTransactionByIdForCustomer(@PathVariable @NotNull UUID transactionId,
+                                                                           @AuthenticationPrincipal UUID userId) {
+        var transactionResult = getTransactionByIdUseCase.getTransactionById(transactionId, userId);
+        return ResponseEntity.ok(transactionResult);
     }
 }

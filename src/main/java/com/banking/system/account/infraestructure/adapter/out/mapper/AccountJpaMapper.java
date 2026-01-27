@@ -43,7 +43,8 @@ public class AccountJpaMapper {
                 Money.of(accountJpaEntity.getDailyTransferLimit(), currency),
                 Money.of(accountJpaEntity.getMonthlyTransferLimit(), currency),
                 accountJpaEntity.getOpenedAt(),
-                accountJpaEntity.getClosedAt()
+                accountJpaEntity.getClosedAt(),
+                accountJpaEntity.getUpdatedAt()
         );
     }
 }

@@ -48,6 +48,6 @@ ALTER TABLE transactions
 DROP TYPE transaction_type;
 DROP TYPE transaction_status;
 
--- Add new column with TIMESTAMP WITH TIME ZONE type
+-- Add kyc_verified_at column (missing from V1)
 ALTER TABLE customers
-    ALTER COLUMN kyc_verified_at TYPE TIMESTAMP WITH TIME ZONE;
+    ADD COLUMN IF NOT EXISTS kyc_verified_at TIMESTAMP WITH TIME ZONE;

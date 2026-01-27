@@ -4,12 +4,14 @@ import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.customer.application.dto.result.CustomerResult;
 import com.banking.system.customer.application.usecase.*;
+import com.banking.system.customer.infraestructure.adapter.in.rest.dto.request.CustomerUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -33,6 +35,7 @@ public class CustomerRestController {
     private final GetAllCustomerUseCase getAllCustomerUseCase;
     private final ApproveKycUseCase approveKycUseCase;
     private final RejectKycUseCase rejectKycUseCase;
+    private final UpdateCustomerUseCase updateCustomerUseCase;
 
     @Operation(
             summary = "Get my customer profile",
@@ -45,9 +48,30 @@ public class CustomerRestController {
     })
     @PreAuthorize("hasAuthority('CUSTOMER_VIEW_OWN')")
     @GetMapping("/me")
-    public ResponseEntity<CustomerResult> getMyProfile(
+    public ResponseEntity<CustomerResult> getProfileForUser(
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
         var result = getCustomerUseCase.getCustomerByUserId(userId);
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "Update my profile",
+            description = "Updates the authenticated customer's personal data. " +
+                    "All fields are optional; only provided fields are updated. " +
+                    "Name changes (firstName + lastName) reset KYC status to PENDING."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Customer updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT"),
+            @ApiResponse(responseCode = "404", description = "Customer not found")
+    })
+    @PreAuthorize("hasAuthority('CUSTOMER_UPDATE')")
+    @PutMapping("/me")
+    public ResponseEntity<CustomerResult> updateMyProfile(
+            @RequestBody @Valid CustomerUpdateRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        var result = updateCustomerUseCase.updateCustomer(request.toCommand(), userId);
         return ResponseEntity.ok(result);
     }
 

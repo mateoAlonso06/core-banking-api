@@ -16,9 +16,11 @@ import com.banking.system.transaction.application.dto.result.TransactionResult;
 import com.banking.system.transaction.application.mapper.TransactionDomainMapper;
 import com.banking.system.transaction.application.usecase.DepositUseCase;
 import com.banking.system.transaction.application.usecase.GetAllTransactionsByAccountUseCase;
+import com.banking.system.transaction.application.usecase.GetTransactionByIdUseCase;
 import com.banking.system.transaction.application.usecase.WithdrawUseCase;
 import com.banking.system.transaction.domain.exception.AccountAccessDeniedException;
 import com.banking.system.transaction.domain.exception.KycNotApprovedException;
+import com.banking.system.transaction.domain.exception.TransactionNotFoundException;
 import com.banking.system.transaction.domain.model.Description;
 import com.banking.system.transaction.domain.model.ReferenceNumber;
 import com.banking.system.transaction.domain.model.Transaction;
@@ -37,6 +39,7 @@ import java.util.UUID;
 public class TransactionService implements
         DepositUseCase,
         WithdrawUseCase,
+        GetTransactionByIdUseCase,
         GetAllTransactionsByAccountUseCase {
     private final TransactionRepositoryPort transactionRepositoryPort;
     private final CustomerRepositoryPort customerRepositoryPort;
@@ -95,6 +98,24 @@ public class TransactionService implements
         PagedResult<Transaction> transactionsPage = transactionRepositoryPort.findAllTransactionsByAccountId(pageRequest, accountId);
 
         return PagedResult.mapContent(transactionsPage, TransactionDomainMapper::toResult);
+    }
+
+    @Override
+    public TransactionResult getTransactionById(UUID transactionId, UUID userId) {
+        Customer customer = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
+
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found: " + transactionId));
+
+        Account account = accountRepositoryPort.findByCustomerId(customer.getId())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found for customerId: " + customer.getId()));
+
+        if (!customer.getId().equals(account.getCustomerId())) {
+            throw new AccountAccessDeniedException("Transaction does not belong to the authenticated user");
+        }
+
+        return TransactionDomainMapper.toResult(transaction);
     }
 
     /*Gets the account if the user is authorized and KYC is approved*/

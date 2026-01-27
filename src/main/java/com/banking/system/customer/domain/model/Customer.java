@@ -18,7 +18,7 @@ public class Customer {
     private final UUID userId;
     private PersonName personName;
     private final IdentityDocument identityDocument;
-    private LocalDate birthDate;
+    private final LocalDate birthDate;
     private Phone phone;
     private Address address;
     private final LocalDate customerSince;
@@ -157,5 +157,22 @@ public class Customer {
         }
         this.kycStatus = KycStatus.REJECTED;
         this.kycVerifiedAt = Instant.now();
+    }
+
+    public void updatePersonName(PersonName newName) {
+        Objects.requireNonNull(newName, "newName must not be null");
+        this.personName = newName;
+        this.kycStatus = KycStatus.PENDING;
+        this.kycVerifiedAt = null;
+    }
+
+    public void updatePhone(Phone newPhone) {
+        Objects.requireNonNull(newPhone, "newPhone must not be null");
+        this.phone = newPhone;
+    }
+
+    public void updateAddress(Address newAddress) {
+        Objects.requireNonNull(newAddress, "newAddress must not be null");
+        this.address = newAddress;
     }
 }

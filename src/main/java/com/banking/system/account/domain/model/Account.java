@@ -1,13 +1,14 @@
 package com.banking.system.account.domain.model;
 
 import com.banking.system.account.domain.exception.AccountNotActiveException;
-import com.banking.system.common.domain.exception.CurrencyMismatchException;
 import com.banking.system.account.domain.exception.InsufficientFundsException;
 import com.banking.system.account.domain.exception.InvalidAmountException;
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
+import com.banking.system.common.domain.exception.CurrencyMismatchException;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class Account {
     private Money monthlyTransferLimit;
     private AccountStatus status;
     private LocalDate closedAt;
+    private Instant updatedAt;
 
     private Account(
             UUID id,
@@ -41,7 +43,8 @@ public class Account {
             Money dailyTransferLimit,
             Money monthlyTransferLimit,
             LocalDate openedAt,
-            LocalDate closedAt) {
+            LocalDate closedAt,
+            Instant updatedAt) {
         Objects.requireNonNull(customerId, "Customer ID cannot be null");
         Objects.requireNonNull(accountNumber, "Account number cannot be null");
         Objects.requireNonNull(accountType, "Account type cannot be null");
@@ -66,6 +69,7 @@ public class Account {
         this.monthlyTransferLimit = monthlyTransferLimit;
         this.openedAt = openedAt;
         this.closedAt = closedAt;
+        this.updatedAt = updatedAt;
     }
 
 
@@ -107,6 +111,7 @@ public class Account {
      * @param monthlyTransferLimit configured monthly transfer limit
      * @param openedAt             date when the account was opened
      * @param closedAt             date when the account was closed, or {@code null} if active
+     * @param updatedAt            timestamp of the last update
      * @return fully initialized {@link Account} instance representing existing data
      */
     public static Account reconstitute(
@@ -122,7 +127,8 @@ public class Account {
             Money dailyTransferLimit,
             Money monthlyTransferLimit,
             LocalDate openedAt,
-            LocalDate closedAt) {
+            LocalDate closedAt,
+            Instant updatedAt) {
 
         return new Account(
                 id,
@@ -137,7 +143,8 @@ public class Account {
                 dailyTransferLimit,
                 monthlyTransferLimit,
                 openedAt,
-                closedAt
+                closedAt,
+                updatedAt
         );
     }
 
@@ -175,7 +182,8 @@ public class Account {
                 Money.of(AccountLimits.DEFAULT_DAILY_TRANSFER, currency),
                 Money.of(AccountLimits.DEFAULT_MONTHLY_TRANSFER, currency),
                 LocalDate.now(),
-                null
+                null,
+                Instant.now()
         );
     }
 
@@ -203,7 +211,6 @@ public class Account {
     public boolean isActive() {
         return this.status == AccountStatus.ACTIVE;
     }
-
 
     private void validateSameCurrency(MoneyCurrency currency) {
         if (!this.currency.value().equals(currency.value())) {

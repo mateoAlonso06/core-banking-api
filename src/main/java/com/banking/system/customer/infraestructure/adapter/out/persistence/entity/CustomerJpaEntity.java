@@ -1,6 +1,5 @@
 package com.banking.system.customer.infraestructure.adapter.out.persistence.entity;
 
-import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.model.KycStatus;
 import com.banking.system.customer.domain.model.RiskLevel;
 import jakarta.persistence.*;

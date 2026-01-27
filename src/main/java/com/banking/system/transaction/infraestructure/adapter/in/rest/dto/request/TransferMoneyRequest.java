@@ -10,8 +10,11 @@ public record TransferMoneyRequest(
         @NotNull(message = "Source account ID is required")
         UUID fromAccountId,
 
-        @NotNull(message = "Destination account ID is required")
-        UUID toAccountId,
+        @Pattern(regexp = "^[a-z0-9._-]{6,20}$", message = "Alias must be 6-20 characters long and contain only lowercase letters, digits, dots, hyphens, or underscores")
+        String toAlias,
+
+        @Pattern(regexp = "^\\d{22}$", message = "Account number must be exactly 22 digits")
+        String toAccountNumber,
 
         @NotNull(message = "Amount is required")
         @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
@@ -37,9 +40,17 @@ public record TransferMoneyRequest(
 ) {
 
     public TransferMoneyCommand toCommand() {
+        boolean hasAlias = toAlias != null && !toAlias.isBlank();
+        boolean hasAccountNumber = toAccountNumber != null && !toAccountNumber.isBlank();
+
+        if (hasAlias == hasAccountNumber) {
+            throw new IllegalArgumentException("Exactly one of 'toAlias' or 'toAccountNumber' must be provided");
+        }
+
         return new TransferMoneyCommand(
                 fromAccountId,
-                toAccountId,
+                hasAlias ? toAlias : null,
+                hasAccountNumber ? toAccountNumber : null,
                 amount,
                 currency,
                 feeAmount,
