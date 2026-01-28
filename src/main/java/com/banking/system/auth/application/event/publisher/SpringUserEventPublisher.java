@@ -1,8 +1,11 @@
 package com.banking.system.auth.application.event.publisher;
 
 import com.banking.system.auth.application.dto.command.RegisterCommand;
+import com.banking.system.auth.application.event.EmailVerificationRequestedEvent;
 import com.banking.system.auth.application.event.UserRegisteredEvent;
 import com.banking.system.auth.domain.model.User;
+
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -28,6 +31,13 @@ public class SpringUserEventPublisher implements UserEventPublisher {
                         command.city(),
                         command.country()
                 )
+        );
+    }
+
+    @Override
+    public void publishEmailVerificationRequestedEvent(UUID userId, String email, String token, String firstName) {
+        applicationEventPublisher.publishEvent(
+                new EmailVerificationRequestedEvent(userId, email, token, firstName)
         );
     }
 }

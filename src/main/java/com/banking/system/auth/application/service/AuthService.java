@@ -22,6 +22,10 @@ import com.banking.system.auth.domain.port.out.PasswordHasher;
 import com.banking.system.auth.domain.port.out.RoleRepositoryPort;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
+import com.banking.system.auth.domain.port.out.VerificationTokenRepositoryPort;
+import com.banking.system.auth.domain.model.VerificationToken;
+import com.banking.system.auth.domain.model.UserStatus;
+import com.banking.system.auth.domain.exception.UserNotVerifiedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,6 +47,7 @@ public class AuthService implements
     private final UserEventPublisher userEventPublisher;
     private final PasswordHasher passwordHasher;
     private final TokenGenerator tokenGenerator;
+    private final VerificationTokenRepositoryPort verificationTokenRepository;
 
     @Override
     @Transactional
@@ -52,6 +57,9 @@ public class AuthService implements
 
         if (!passwordHasher.verify(command.password(), user.getPassword().value()))
             throw new InvalidCredentalsException("Invalid credentials");
+
+        if (user.getStatus() == UserStatus.PENDING_VERIFICATION)
+            throw new UserNotVerifiedException("Please verify your email before logging in");
 
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
@@ -91,6 +99,16 @@ public class AuthService implements
         User savedUser = userRepository.save(user);
 
         userEventPublisher.publishUserRegisteredEvent(savedUser, command);
+
+        VerificationToken verificationToken = VerificationToken.createNew(savedUser.getId());
+        verificationTokenRepository.save(verificationToken);
+
+        userEventPublisher.publishEmailVerificationRequestedEvent(
+                savedUser.getId(),
+                savedUser.getEmail().value(),
+                verificationToken.getToken(),
+                command.firstName()
+        );
 
         return new RegisterResult(savedUser.getId(), savedUser.getEmail().value());
     }
