@@ -35,13 +35,6 @@ public record Email(String value) {
             );
         }
 
-        String localPart = value.substring(0, value.indexOf('@'));
-        if (localPart.length() > LOCAL_PART_MAX_LENGTH) {
-            throw new IllegalArgumentException(
-                    "Email local part exceeds maximum length of " + LOCAL_PART_MAX_LENGTH + " characters"
-            );
-        }
-
         if (!EMAIL_PATTERN.matcher(value).matches()) {
             throw new IllegalArgumentException(
                     "Invalid email format: " + value
@@ -50,6 +43,13 @@ public record Email(String value) {
 
         if (value.contains("..")) {
             throw new IllegalArgumentException("Email cannot contain consecutive dots");
+        }
+
+        String localPart = value.substring(0, value.indexOf('@'));
+        if (localPart.length() > LOCAL_PART_MAX_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Email local part exceeds maximum length of " + LOCAL_PART_MAX_LENGTH + " characters"
+            );
         }
     }
 

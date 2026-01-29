@@ -1,4 +1,4 @@
-package com.banking.system.unit.common.model.vo;
+package com.banking.system.unit.common.domain.model;
 
 import com.banking.system.common.domain.MoneyCurrency;
 import org.junit.jupiter.api.DisplayName;

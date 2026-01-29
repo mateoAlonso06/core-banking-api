@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
 
 /**
  * Money represents a monetary value with a fixed currency.
@@ -19,10 +20,8 @@ public final class Money {
     private final MoneyCurrency currency;
 
     private Money(BigDecimal value, MoneyCurrency currency) {
-        if (value == null)
-            throw new IllegalArgumentException("Amount cannot be null");
-        if (currency == null)
-            throw new IllegalArgumentException("Currency cannot be null");
+        Objects.requireNonNull(value, "Amount cannot be null");
+        Objects.requireNonNull(currency, "Currency cannot be null");
 
         this.value = value.setScale(SCALE, RoundingMode.HALF_EVEN);
         this.currency = currency;

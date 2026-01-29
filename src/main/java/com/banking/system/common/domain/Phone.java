@@ -17,16 +17,21 @@ public record Phone(String number) {
             throw new IllegalArgumentException("Phone number cannot be blank");
         }
 
+        // Validate '+' symbol usage
+        long plusCount = number.chars().filter(ch -> ch == '+').count();
+        if (plusCount > 1) {
+            throw new IllegalArgumentException("'+' symbol must be at the start for international format");
+        }
+        if (plusCount == 1 && !number.startsWith("+")) {
+            throw new IllegalArgumentException("'+' symbol must be at the start for international format");
+        }
+
         if (number.length() < 8 || number.length() > 20) {
             throw new IllegalArgumentException("Phone number must be between 8 and 20 digits long");
         }
 
         if (!isValidFormat(number)) {
             throw new IllegalArgumentException("Invalid phone number format. Use international format (+549...) or local digits only.");
-        }
-
-        if (number.contains("+") && !number.startsWith("+")) {
-            throw new IllegalArgumentException("'+' symbol must be at the start for international format");
         }
     }
 
@@ -87,7 +92,6 @@ public record Phone(String number) {
      * Example: ***-5678
      */
     public String masked() {
-        if (number.length() <= 4) return "****";
         return "***-" + number.substring(number.length() - 4);
     }
 }

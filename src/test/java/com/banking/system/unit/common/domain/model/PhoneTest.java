@@ -1,4 +1,4 @@
-package com.banking.system.unit.common.model.vo;
+package com.banking.system.unit.common.domain.model;
 
 import com.banking.system.common.domain.Phone;
 import org.junit.jupiter.api.DisplayName;
@@ -168,9 +168,37 @@ class PhoneTest {
                     IllegalArgumentException.class,
                     () -> new Phone("123+456789012")
             );
-            // The format validation runs first, so we get format error message
-            assertTrue(exception.getMessage().contains("Invalid phone number format") ||
-                    exception.getMessage().contains("'+' symbol must be at the start"));
+            assertEquals("'+' symbol must be at the start for international format", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should reject multiple + symbols")
+        void shouldRejectMultiplePlusSymbols() {
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new Phone("+54+9112345678")
+            );
+            assertEquals("'+' symbol must be at the start for international format", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should reject + symbol at the end")
+        void shouldRejectPlusSymbolAtEnd() {
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new Phone("12345678+")
+            );
+            assertEquals("'+' symbol must be at the start for international format", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should reject + symbol in the middle")
+        void shouldRejectPlusSymbolInMiddle() {
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new Phone("1234+5678901")
+            );
+            assertEquals("'+' symbol must be at the start for international format", exception.getMessage());
         }
 
         @Test

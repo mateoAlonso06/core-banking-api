@@ -1,13 +1,13 @@
-package com.banking.system.unit.common.model.vo;
+package com.banking.system.unit.common.domain.model;
 
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
+import com.banking.system.common.domain.exception.CurrencyMismatchException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.Currency;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -109,30 +109,30 @@ class MoneyTest {
     class NullValidationTests {
 
         @Test
-        @DisplayName("Should throw IAE when value is null")
-        void shouldThrowIaeWhenValueIsNull() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+        @DisplayName("Should throw NPE when value is null")
+        void shouldThrowNpeWhenValueIsNull() {
+            NullPointerException exception = assertThrows(
+                    NullPointerException.class,
                     () -> Money.of(null, ARS)
             );
             assertEquals("Amount cannot be null", exception.getMessage());
         }
 
         @Test
-        @DisplayName("Should throw IAE when currency is null")
-        void shouldThrowIaeWhenCurrencyIsNull() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+        @DisplayName("Should throw NPE when currency is null")
+        void shouldThrowNpeWhenCurrencyIsNull() {
+            NullPointerException exception = assertThrows(
+                    NullPointerException.class,
                     () -> Money.of(new BigDecimal("100"), null)
             );
             assertEquals("Currency cannot be null", exception.getMessage());
         }
 
         @Test
-        @DisplayName("Should throw IAE when currency is null in zero factory")
-        void shouldThrowIaeWhenCurrencyIsNullInZeroFactory() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+        @DisplayName("Should throw NPE when currency is null in zero factory")
+        void shouldThrowNpeWhenCurrencyIsNullInZeroFactory() {
+            NullPointerException exception = assertThrows(
+                    NullPointerException.class,
                     () -> Money.zero(null)
             );
             assertEquals("Currency cannot be null", exception.getMessage());
@@ -178,16 +178,16 @@ class MoneyTest {
         }
 
         @Test
-        @DisplayName("Should throw IAE when adding different currencies")
-        void shouldThrowIaeWhenAddingDifferentCurrencies() {
+        @DisplayName("Should throw domain business rule exception when adding different currencies")
+        void shouldThrowBusinessRuleExceptionWhenAddingDifferentCurrencies() {
             Money arsAmount = Money.of(new BigDecimal("100.00"), ARS);
             Money usdAmount = Money.of(new BigDecimal("50.00"), USD);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            CurrencyMismatchException exception = assertThrows(
+                    CurrencyMismatchException.class,
                     () -> arsAmount.add(usdAmount)
             );
-            assertEquals("Currency mismatch", exception.getMessage());
+            assertEquals("Currency mismatch: " + arsAmount.getCurrency() + " vs " + usdAmount.getCurrency(), exception.getMessage());
         }
 
         @Test
@@ -253,16 +253,16 @@ class MoneyTest {
         }
 
         @Test
-        @DisplayName("Should throw IAE when subtracting different currencies")
-        void shouldThrowIaeWhenSubtractingDifferentCurrencies() {
+        @DisplayName("Should throw business rule exception when subtracting different currencies")
+        void shouldThrowBusinessRuleExceptionWhenSubtractingDifferentCurrencies() {
             Money arsAmount = Money.of(new BigDecimal("100.00"), ARS);
             Money usdAmount = Money.of(new BigDecimal("50.00"), USD);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            CurrencyMismatchException exception = assertThrows(
+                    CurrencyMismatchException.class,
                     () -> arsAmount.subtract(usdAmount)
             );
-            assertEquals("Currency mismatch", exception.getMessage());
+            assertEquals("Currency mismatch: " + arsAmount.getCurrency() + " vs " + usdAmount.getCurrency(), exception.getMessage());
         }
 
         @Test
@@ -312,6 +312,35 @@ class MoneyTest {
             Money money = Money.of(new BigDecimal("-0.01"), ARS);
 
             assertTrue(money.isNegative());
+        }
+    }
+
+    @Nested
+    @DisplayName("isZero() Method Tests")
+    class IsZeroMethodTests {
+
+        @Test
+        @DisplayName("Should return true for zero amount")
+        void shouldReturnTrueForZeroAmount() {
+            Money money = Money.zero(ARS);
+
+            assertTrue(money.isZero());
+        }
+
+        @Test
+        @DisplayName("Should return false for positive amount")
+        void shouldReturnFalseForPositiveAmount() {
+            Money money = Money.of(new BigDecimal("10.00"), ARS);
+
+            assertFalse(money.isZero());
+        }
+
+        @Test
+        @DisplayName("Should return false for negative amount")
+        void shouldReturnFalseForNegativeAmount() {
+            Money money = Money.of(new BigDecimal("-10.00"), ARS);
+
+            assertFalse(money.isZero());
         }
     }
 
