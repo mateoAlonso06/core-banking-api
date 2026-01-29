@@ -10,13 +10,19 @@ import com.banking.system.customer.domain.exception.CustomerNotFoundException;
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import com.banking.system.transaction.application.dto.command.TransferMoneyCommand;
+import com.banking.system.transaction.application.dto.receipt.TransferReceipt;
 import com.banking.system.transaction.application.dto.result.TransferResult;
+import com.banking.system.transaction.application.mapper.ReceiptMapper;
 import com.banking.system.transaction.application.mapper.TransferDomainMapper;
 import com.banking.system.transaction.application.usecase.GetTransferByIdUseCase;
 import com.banking.system.transaction.application.usecase.TransferMoneyUseCase;
+import com.banking.system.transaction.domain.exception.TransactionNotFoundException;
 import com.banking.system.transaction.domain.exception.TransferAccessDeniedException;
 import com.banking.system.transaction.domain.exception.TransferNotFoundException;
-import com.banking.system.transaction.domain.model.*;
+import com.banking.system.transaction.domain.model.Description;
+import com.banking.system.transaction.domain.model.IdempotencyKey;
+import com.banking.system.transaction.domain.model.Transfer;
+import com.banking.system.transaction.domain.model.TransferExecution;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.domain.port.out.TransferRepositoryPort;
 import com.banking.system.transaction.domain.service.TransferDomainService;
@@ -39,40 +45,50 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     private final TransactionRepositoryPort transactionRepositoryPort;
     private final CustomerRepositoryPort customerRepositoryPort;
     private final TransferDomainService transferDomainService;
+    private final TransactionAuditService transactionAuditService;
 
     @Override
     @Transactional
-    public TransferResult transfer(TransferMoneyCommand command, UUID userId) {
+    public TransferReceipt transfer(TransferMoneyCommand command, UUID userId) {
         log.info("Initiating transfer from account {}", command.fromAccountId());
 
         Account sourceAccount = findAccount(command.fromAccountId(), "Source");
+        Account targetAccount = resolveTargetAccount(command);
 
         validateOwnership(sourceAccount, userId);
 
-        // Idempotency
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
 
         Optional<Transfer> existingTransfer = transferRepositoryPort.findByIdempotencyKey(idempotencyKey.value());
         if (existingTransfer.isPresent()) {
             log.info("Transfer already exists for idempotency key {}", idempotencyKey.value());
-            return TransferDomainMapper.toResult(existingTransfer.get());
+            // Return receipt for existing transfer
+            var debitTx = transactionRepositoryPort.findById(existingTransfer.get().getDebitTransactionId())
+                    .orElseThrow(() -> new TransactionNotFoundException("Debit transaction not found"));
+            return ReceiptMapper.toTransferReceipt(existingTransfer.get(), sourceAccount, targetAccount, debitTx);
         }
-
-        Account targetAccount = resolveTargetAccount(command);
-
-        Money amount = toMoney(command.amount(), command.currency());
-        Money feeAmount = toFeeAmount(command);
-        Description description = new Description(command.description());
 
         try {
             TransferExecution execution = transferDomainService.execute(
-                    sourceAccount, targetAccount, amount, description, feeAmount, idempotencyKey
+                    sourceAccount,
+                    targetAccount,
+                    command.category(),
+                    toMoney(command.amount(), command.currency()),
+                    new Description(command.description()),
+                    toFeeAmount(command),
+                    idempotencyKey
             );
 
             persistExecution(execution, sourceAccount, targetAccount);
 
             log.info("Transfer completed successfully for idempotency key {}", idempotencyKey.value());
-            return TransferDomainMapper.toResult(execution.transfer());
+            // Return receipt for confirmation/voucher
+            return ReceiptMapper.toTransferReceipt(
+                    execution.transfer(),
+                    sourceAccount,
+                    targetAccount,
+                    execution.debitTransaction()
+            );
 
         } catch (DomainException e) {
             log.error("Transfer failed: {}", e.getMessage());
@@ -143,35 +159,46 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     }
 
     private void persistExecution(TransferExecution execution, Account sourceAccount, Account targetAccount) {
-        Transaction savedDebit = transactionRepositoryPort.save(execution.debitTransaction());
-        Transaction savedCredit = transactionRepositoryPort.save(execution.creditTransaction());
+        // Register transactions in PENDING status
+        var savedDebit = transactionAuditService.registerTransactionAudit(execution.debitTransaction());
+        var savedCredit = transactionAuditService.registerTransactionAudit(execution.creditTransaction());
 
-        Transaction savedFee = null;
-        if (execution.hasFee()) {
-            savedFee = transactionRepositoryPort.save(execution.feeTransaction());
+        var savedFee = execution.hasFee()
+                ? transactionAuditService.registerTransactionAudit(execution.feeTransaction())
+                : null;
+
+        try {
+            // Save accounts (already modified by domain service)
+            accountRepositoryPort.save(sourceAccount);
+            accountRepositoryPort.save(targetAccount);
+
+            // Save transfer
+            transferRepositoryPort.save(execution.transfer());
+
+            // Mark transactions as COMPLETED
+            transactionAuditService.transactionCompleted(savedDebit.getId());
+            transactionAuditService.transactionCompleted(savedCredit.getId());
+            if (savedFee != null) {
+                transactionAuditService.transactionCompleted(savedFee.getId());
+            }
+        } catch (Exception e) {
+            // Mark transactions as FAILED
+            transactionAuditService.transactionFailed(savedDebit.getId());
+            transactionAuditService.transactionFailed(savedCredit.getId());
+            if (savedFee != null) {
+                transactionAuditService.transactionFailed(savedFee.getId());
+            }
+            log.error("Transfer execution failed, marking transactions as FAILED", e);
+            throw e;
         }
-
-        accountRepositoryPort.save(sourceAccount);
-        accountRepositoryPort.save(targetAccount);
-
-        savedDebit.markCompleted();
-        savedCredit.markCompleted();
-        transactionRepositoryPort.save(savedDebit);
-        transactionRepositoryPort.save(savedCredit);
-
-        if (savedFee != null) {
-            savedFee.markCompleted();
-            transactionRepositoryPort.save(savedFee);
-        }
-
-        transferRepositoryPort.save(execution.transfer());
     }
 
     private void validateOwnership(Account sourceAccount, UUID userId) {
-        Customer customer = customerRepositoryPort.findById(userId)
+        Customer customer = customerRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
 
-        if (!sourceAccount.getCustomerId().equals(customer.getId()))
+        if (!sourceAccount.getCustomerId().equals(customer.getId())) {
             throw new TransferAccessDeniedException("Source account does not belong to the authenticated user");
+        }
     }
 }

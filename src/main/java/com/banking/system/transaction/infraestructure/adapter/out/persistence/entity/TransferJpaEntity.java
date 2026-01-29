@@ -1,5 +1,6 @@
 package com.banking.system.transaction.infraestructure.adapter.out.persistence.entity;
 
+import com.banking.system.transaction.domain.model.TransferCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -44,6 +45,10 @@ public class TransferJpaEntity {
 
     @Column(nullable = false, length = 3)
     private String currency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private TransferCategory category;
 
     @Column(name = "fee_amount", precision = 19, scale = 2)
     private BigDecimal feeAmount;

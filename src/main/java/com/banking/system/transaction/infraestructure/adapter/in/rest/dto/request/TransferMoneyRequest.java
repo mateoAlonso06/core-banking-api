@@ -1,6 +1,7 @@
 package com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request;
 
 import com.banking.system.transaction.application.dto.command.TransferMoneyCommand;
+import com.banking.system.transaction.domain.model.TransferCategory;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -29,6 +30,9 @@ public record TransferMoneyRequest(
         @Digits(integer = 15, fraction = 2, message = "Fee amount must have a maximum of 19 integer digits and 2 decimal places")
         BigDecimal feeAmount,
 
+        @NotNull(message = "Transfer category is required")
+        TransferCategory category,
+
         @Size(min = 3, max = 3, message = "Fee currency must be a 3-letter ISO code (e.g., ARS, USD)")
         String feeCurrency,
 
@@ -54,6 +58,7 @@ public record TransferMoneyRequest(
                 amount,
                 currency,
                 feeAmount,
+                category,
                 feeCurrency,
                 description,
                 idempotencyKey

@@ -34,6 +34,7 @@ public class TransferDomainService {
     public TransferExecution execute(
             Account sourceAccount,
             Account targetAccount,
+            TransferCategory category,
             Money amount,
             Description description,
             Money feeAmount,
@@ -41,16 +42,25 @@ public class TransferDomainService {
     ) {
         validateDifferentAccounts(sourceAccount, targetAccount);
 
+        // Debit source account and create transaction with correct balanceAfter
+        sourceAccount.debit(amount);
         Transaction debitTx = createDebitTransaction(sourceAccount, amount, description);
-        Transaction creditTx = createCreditTransaction(targetAccount, amount, description);
-        Transaction feeTx = createFeeTransaction(sourceAccount, feeAmount);
 
-        executeAccountOperations(sourceAccount, targetAccount, amount, feeAmount);
+        // Debit fee from source account if applicable
+        Transaction feeTx = null;
+        if (feeAmount != null && !feeAmount.isZero()) {
+            sourceAccount.debit(feeAmount);
+            feeTx = createFeeTransaction(sourceAccount, feeAmount);
+        }
+
+        // Credit target account and create transaction with correct balanceAfter
+        targetAccount.credit(amount);
+        Transaction creditTx = createCreditTransaction(targetAccount, amount, description);
 
         Transfer transfer = createTransfer(
                 sourceAccount, targetAccount,
                 debitTx, creditTx, feeTx,
-                amount, description, feeAmount, idempotencyKey
+                category, amount, description, feeAmount, idempotencyKey
         );
 
         return new TransferExecution(debitTx, creditTx, feeTx, transfer);
@@ -69,7 +79,8 @@ public class TransferDomainService {
                 amount,
                 account.getBalance(),
                 description,
-                ReferenceNumber.generate()
+                ReferenceNumber.generate(),
+                null
         );
     }
 
@@ -80,7 +91,8 @@ public class TransferDomainService {
                 amount,
                 account.getBalance(),
                 description,
-                ReferenceNumber.generate()
+                ReferenceNumber.generate(),
+                null
         );
     }
 
@@ -94,19 +106,9 @@ public class TransferDomainService {
                 feeAmount,
                 account.getBalance(),
                 new Description("Transfer Fee"),
-                ReferenceNumber.generate()
+                ReferenceNumber.generate(),
+                null
         );
-    }
-
-    private void executeAccountOperations(
-            Account sourceAccount,
-            Account targetAccount,
-            Money amount,
-            Money feeAmount
-    ) {
-        Money totalDebit = feeAmount != null ? amount.add(feeAmount) : amount;
-        sourceAccount.debit(totalDebit);
-        targetAccount.credit(amount);
     }
 
     private Transfer createTransfer(
@@ -115,6 +117,7 @@ public class TransferDomainService {
             Transaction debitTx,
             Transaction creditTx,
             Transaction feeTx,
+            TransferCategory category,
             Money amount,
             Description description,
             Money feeAmount,
@@ -125,6 +128,7 @@ public class TransferDomainService {
                 targetAccount.getId(),
                 debitTx.getId(),
                 creditTx.getId(),
+                category,
                 amount,
                 description,
                 feeAmount,

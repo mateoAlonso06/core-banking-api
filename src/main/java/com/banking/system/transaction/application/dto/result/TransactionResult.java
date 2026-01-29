@@ -7,6 +7,7 @@ public record TransactionResult(
         String accountId,
         String transactionType,
         BigDecimal amount,
+        BigDecimal amountFee,
         String currency,
         BigDecimal balanceAfter,
         String description,

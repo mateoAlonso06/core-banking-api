@@ -29,6 +29,7 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
                 .description(transaction.getDescription().value())
                 .referenceNumber(transaction.getReferenceNumber().value())
                 .status(transaction.getStatus())
+                .idempotencyKey(transaction.getIdempotencyKey() != null ? transaction.getIdempotencyKey().value() : null)
                 .executedAt(transaction.getExecutedAt())
                 .build();
 
@@ -41,6 +42,12 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
     public Optional<Transaction> findById(UUID transactionId) {
         var transactionJpaEntity = transactionJpaRepository.findById(transactionId);
         return transactionJpaEntity
+                .map(TransactionJpaEntityMapper::toDomainEntity);
+    }
+
+    @Override
+    public Optional<Transaction> findByIdempotencyKey(String idempotencyKey) {
+        return transactionJpaRepository.findByIdempotencyKey(idempotencyKey)
                 .map(TransactionJpaEntityMapper::toDomainEntity);
     }
 

@@ -43,7 +43,9 @@ public class TransferRepositoryAdapter implements TransferRepositoryPort {
                 .feeTransaction(transactionFee) // can be null
                 .amount(transfer.getAmount().getValue())
                 .currency(transfer.getAmount().getCurrency().code())
-                .description(transfer.getDescription().value())
+                .category(transfer.getCategory())
+                .feeAmount(transfer.getFeeAmount() != null ? transfer.getFeeAmount().getValue() : null)
+                .description(transfer.getDescription() != null ? transfer.getDescription().value() : null)
                 .idempotencyKey(transfer.getIdempotencyKey().value())
                 .executedAt(transfer.getExecutedAt())
                 .build();

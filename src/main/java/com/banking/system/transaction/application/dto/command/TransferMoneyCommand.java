@@ -1,5 +1,7 @@
 package com.banking.system.transaction.application.dto.command;
 
+import com.banking.system.transaction.domain.model.TransferCategory;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -10,6 +12,7 @@ public record TransferMoneyCommand(
         BigDecimal amount,
         String currency,
         BigDecimal feeAmount,
+        TransferCategory category,
         String feeCurrency,
         String description,
         UUID idempotencyKey

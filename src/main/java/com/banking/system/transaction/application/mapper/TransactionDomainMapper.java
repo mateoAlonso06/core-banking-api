@@ -10,12 +10,13 @@ public class TransactionDomainMapper {
                 transaction.getAccountId().toString(),
                 transaction.getTransactionType().name(),
                 transaction.getAmount().getValue(),
+                null, // amountFee - not applicable for individual transactions
                 transaction.getAmount().getCurrency().code(),
-                transaction.getBalanceAfter().getValue(),
-                transaction.getDescription().toString(),
-                transaction.getReferenceNumber().toString(),
+                transaction.getBalanceAfter() != null ? transaction.getBalanceAfter().getValue() : null,
+                transaction.getDescription() != null ? transaction.getDescription().value() : null,
+                transaction.getReferenceNumber().value(),
                 transaction.getExecutedAt().toString(),
-                transaction.getStatus().toString()
+                transaction.getStatus().name()
         );
     }
 }

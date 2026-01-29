@@ -1,5 +1,6 @@
 package com.banking.system.transaction.infraestructure.adapter.in.rest;
 
+import com.banking.system.transaction.application.dto.receipt.TransferReceipt;
 import com.banking.system.transaction.application.dto.result.TransferResult;
 import com.banking.system.transaction.application.usecase.GetTransferByIdUseCase;
 import com.banking.system.transaction.application.usecase.TransferMoneyUseCase;
@@ -46,10 +47,10 @@ public class TransfersRestController {
     })
     @PreAuthorize("hasAuthority('TRANSACTION_TRANSFER')")
     @PostMapping
-    public ResponseEntity<TransferResult> transfer(@RequestBody @Valid TransferMoneyRequest request,
-                                                   @AuthenticationPrincipal UUID userId) {
-        var result = transferMoneyUseCase.transfer(request.toCommand(), userId);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<TransferReceipt> transfer(@RequestBody @Valid TransferMoneyRequest request,
+                                                    @AuthenticationPrincipal UUID userId) {
+        var receipt = transferMoneyUseCase.transfer(request.toCommand(), userId);
+        return ResponseEntity.ok(receipt);
     }
 
     @Operation(

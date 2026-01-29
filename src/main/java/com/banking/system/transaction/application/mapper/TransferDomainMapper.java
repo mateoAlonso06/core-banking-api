@@ -9,10 +9,11 @@ public class TransferDomainMapper {
                 transfer.getId(),
                 transfer.getSourceAccountId(),
                 transfer.getDestinationAccountId(),
+                transfer.getCategory(),
                 transfer.getAmount().getValue(),
                 transfer.getCreditTransactionId(),
                 transfer.getDebitTransactionId(),
-                transfer.getFeeTransactionId() != null ? transfer.getFeeTransactionId() : null
+                transfer.getFeeTransactionId()
         );
     }
 }

@@ -12,5 +12,7 @@ public interface TransactionRepositoryPort {
 
     Optional<Transaction> findById(UUID transactionId);
 
+    Optional<Transaction> findByIdempotencyKey(String idempotencyKey);
+
     PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId);
 }

@@ -14,6 +14,7 @@ public class Transfer {
     private final UUID destinationAccountId;
     private final UUID debitTransactionId;
     private final UUID creditTransactionId;
+    private final TransferCategory category;
     private final Money amount;
     private final Money feeAmount;
     private final Description description;
@@ -26,6 +27,7 @@ public class Transfer {
                      UUID destinationAccountId,
                      UUID debitTransactionId,
                      UUID creditTransactionId,
+                     TransferCategory category,
                      Money amount,
                      Money feeAmount,
                      Description description,
@@ -47,6 +49,7 @@ public class Transfer {
         this.creditTransactionId = creditTransactionId;
         this.amount = amount;
         this.feeAmount = feeAmount;
+        this.category = category;
         this.description = description;
         this.feeTransactionId = feeTransactionId;
         this.idempotencyKey = idempotencyKey;
@@ -83,6 +86,7 @@ public class Transfer {
             UUID destinationAccountId,
             UUID debitTransactionId,
             UUID creditTransactionId,
+            TransferCategory category,
             Money amount,
             Description description,
             Money feeAmount,
@@ -95,6 +99,7 @@ public class Transfer {
                 destinationAccountId,
                 debitTransactionId,
                 creditTransactionId,
+                category != null ? category : TransferCategory.OTROS,
                 amount,
                 feeAmount,
                 description,
@@ -133,6 +138,7 @@ public class Transfer {
             UUID debitTransactionId,
             UUID creditTransactionId,
             Money amount,
+            TransferCategory category,
             Money feeAmount,
             Description description,
             UUID feeTransactionId,
@@ -145,6 +151,7 @@ public class Transfer {
                 destinationAccountId,
                 debitTransactionId,
                 creditTransactionId,
+                category,
                 amount,
                 feeAmount,
                 description,

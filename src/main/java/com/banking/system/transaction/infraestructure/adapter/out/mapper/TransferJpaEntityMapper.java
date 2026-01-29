@@ -32,6 +32,7 @@ public class TransferJpaEntityMapper {
                 entity.getDebitTransaction().getId(),
                 entity.getCreditTransaction().getId(),
                 amount,
+                entity.getCategory(),
                 feeAmount,
                 description,
                 entity.getFeeTransaction() != null ? entity.getFeeTransaction().getId() : null,

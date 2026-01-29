@@ -50,6 +50,9 @@ public class TransactionJpaEntity {
     @Column(nullable = false)
     private TransactionStatus status;
 
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
+
     @Column(name = "executed_at", nullable = false, updatable = false)
     private Instant executedAt;
 
