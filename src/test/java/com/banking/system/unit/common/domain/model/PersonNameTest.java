@@ -136,6 +136,33 @@ class PersonNameTest {
             assertEquals("First name cannot be blank.", exception.getMessage());
         }
 
+        @Test
+        @DisplayName("Should reject Hangul Filler invisible character in lastName")
+        void shouldRejectHangulFillerInLastName() {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new PersonName("Mateo", "ㅤㅤ")
+            );
+        }
+
+        @Test
+        @DisplayName("Should reject Hangul Filler invisible character in firstName")
+        void shouldRejectHangulFillerInFirstName() {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new PersonName("ㅤ", "Pérez")
+            );
+        }
+
+        @Test
+        @DisplayName("Should reject zero-width space in firstName")
+        void shouldRejectZeroWidthSpaceInFirstName() {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new PersonName("Juan\u200B", "Pérez")
+            );
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"", "   ", "\t", "\n", "  \t\n  "})
         @DisplayName("Should reject blank lastName")
@@ -462,6 +489,37 @@ class PersonNameTest {
     @Nested
     @DisplayName("Edge Cases")
     class EdgeCaseTests {
+
+        @Test
+        @DisplayName("Should trim leading and trailing spaces from firstName")
+        void shouldTrimLeadingAndTrailingSpacesFromFirstName() {
+            // When
+            PersonName personName = new PersonName("  Juan  ", "Pérez");
+
+            // Then
+            assertEquals("Juan", personName.firstName());
+        }
+
+        @Test
+        @DisplayName("Should trim leading and trailing spaces from lastName")
+        void shouldTrimLeadingAndTrailingSpacesFromLastName() {
+            // When
+            PersonName personName = new PersonName("Juan", "  Pérez  ");
+
+            // Then
+            assertEquals("Pérez", personName.lastName());
+        }
+
+        @Test
+        @DisplayName("Should trim leading and trailing spaces from both names")
+        void shouldTrimLeadingAndTrailingSpacesFromBothNames() {
+            // When
+            PersonName personName = new PersonName("  Juan  ", "  Pérez  ");
+
+            // Then
+            assertEquals("Juan", personName.firstName());
+            assertEquals("Pérez", personName.lastName());
+        }
 
         @Test
         @DisplayName("Should handle names with all uppercase letters")

@@ -13,7 +13,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Separamos una clase abstracta base para centralizar la infraestructura de testing y evitar duplicación, inconsistencias y drift de configuración.
 public abstract class AbstractIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:16-alpine";

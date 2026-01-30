@@ -43,6 +43,7 @@ public class Customer {
         Objects.requireNonNull(personName, "personName must not be null");
         Objects.requireNonNull(identityDocument, "identityDocument must not be null");
         Objects.requireNonNull(birthDate, "birthDate must not be null");
+        Objects.requireNonNull(phone, "phone must not be null");
         Objects.requireNonNull(address, "address must not be null");
         Objects.requireNonNull(customerSince, "customerSince must not be null");
         Objects.requireNonNull(kycStatus, "kycStatus must not be null");

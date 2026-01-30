@@ -34,12 +34,15 @@ public record RegisterUserRequest(
         String phone,
 
         @Size(max = 255)
+        @NotBlank
         String address,
 
         @Size(max = 100)
+        @NotBlank
         String city,
 
         @Size(max = 2)
+        @NotBlank
         String country
 ) {
 
