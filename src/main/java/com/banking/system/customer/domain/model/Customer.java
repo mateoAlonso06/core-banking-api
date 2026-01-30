@@ -164,7 +164,6 @@ public class Customer {
         Objects.requireNonNull(newName, "newName must not be null");
         this.personName = newName;
         this.kycStatus = KycStatus.PENDING;
-        this.kycVerifiedAt = null;
     }
 
     public void updatePhone(Phone newPhone) {

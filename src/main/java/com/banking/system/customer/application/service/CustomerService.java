@@ -118,15 +118,36 @@ public class CustomerService implements
         var customer = customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user: " + userId));
 
-        if (command.firstName() != null && command.lastName() != null) {
-            customer.updatePersonName(new PersonName(command.firstName(), command.lastName()));
+        if (command.firstName() != null) {
+            String firstName = command.firstName();
+            if (command.lastName() != null) {
+                String lastName = command.lastName();
+                customer.updatePersonName(new PersonName(firstName, lastName));
+            } else {
+                customer.updatePersonName(new PersonName(firstName, customer.getPersonName().lastName()));
+            }
         }
+
+        if (command.lastName() != null) {
+            String lastName = command.lastName();
+            customer.updatePersonName(new PersonName(customer.getPersonName().firstName(), lastName));
+        }
+
         if (command.phone() != null) {
             customer.updatePhone(new Phone(command.phone()));
         }
         if (command.address() != null) {
-            var newAddress = new Address(command.address(), command.city(), command.country());
-            customer.updateAddress(newAddress);
+            String newAddress = command.address();
+            if (command.city() != null) {
+                String city = command.city();
+                customer.updateAddress(new Address(newAddress, city, customer.getAddress().country()));
+            } else {
+                customer.updateAddress(new Address(newAddress, customer.getAddress().city(), customer.getAddress().country()));
+            }
+        }
+        if (command.city() != null) {
+            String city = command.city();
+            customer.updateAddress(new Address(customer.getAddress().address(), city, customer.getAddress().country()));
         }
 
         var saved = customerRepository.save(customer);

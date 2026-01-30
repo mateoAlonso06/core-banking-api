@@ -25,14 +25,6 @@ public record CustomerUpdateRequest(
         String country
 ) {
     public UpdateCustomerCommand toCommand() {
-        if ((firstName != null) != (lastName != null)) {
-            throw new IllegalArgumentException("firstName and lastName must be provided together");
-        }
-        if (address != null || city != null || country != null) {
-            if (address == null || city == null || country == null) {
-                throw new IllegalArgumentException("address, city and country must be provided together");
-            }
-        }
         return new UpdateCustomerCommand(firstName, lastName, phone, address, city, country);
     }
 }
