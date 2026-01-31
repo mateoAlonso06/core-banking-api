@@ -3,10 +3,7 @@ package com.banking.system.transaction.infraestructure.adapter.in.rest;
 import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.application.dto.result.TransactionResult;
-import com.banking.system.transaction.application.usecase.DepositUseCase;
-import com.banking.system.transaction.application.usecase.GetAllTransactionsByAccountUseCase;
-import com.banking.system.transaction.application.usecase.GetTransactionByIdUseCase;
-import com.banking.system.transaction.application.usecase.WithdrawUseCase;
+import com.banking.system.transaction.application.usecase.*;
 import com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request.DepositMoneyRequest;
 import com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request.WithdrawMoneyRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +36,7 @@ public class TransactionRestController {
     private final WithdrawUseCase withdrawUseCase;
     private final GetTransactionByIdUseCase getTransactionByIdUseCase;
     private final GetAllTransactionsByAccountUseCase getAllTransactionsByAccountUseCase;
+    private final GetAllTransactionsByCustomerUseCase getAllTransactionsByCustomerUseCase;
 
     @Operation(
             summary = "Create deposit",
@@ -64,6 +62,24 @@ public class TransactionRestController {
         depositUseCase.deposit(command, accountId, userId);
 
         return ResponseEntity.ok().build();
+    }
+    @Operation(
+            summary = "Get transaction history for customer",
+            description = "Retrieves the paginated transaction history only for the user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
+            @ApiResponse(responseCode = "403", description = "Authenticated user not authorized to view these transactions"),
+            @ApiResponse(responseCode = "404", description = "Customer not found"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (KYC not approved)")
+    })
+    @PreAuthorize("hasAuthority('TRANSACTION_VIEW_OWN')")
+    @GetMapping("/me")
+    public ResponseEntity<PagedResult<TransactionResult>> getAllTransactionsByCustomer(@AuthenticationPrincipal UUID userId, Pageable pageable) {
+        var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        var result = getAllTransactionsByCustomerUseCase.getAllTransactionsByCustomer(userId, pageRequest);
+        return ResponseEntity.ok(result);
     }
 
     @Operation(
@@ -104,7 +120,7 @@ public class TransactionRestController {
             @ApiResponse(responseCode = "422", description = "Business rule violation (KYC not approved)")
     })
     @PreAuthorize("hasAuthority('TRANSACTION_VIEW_OWN')")
-    @GetMapping("/accounts/{accountId}/transactions")
+    @GetMapping("/accounts/{accountId}")
     public ResponseEntity<PagedResult<TransactionResult>> getAllTransactionsByAccount(
             @Parameter(description = "Account ID to retrieve transactions from", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID accountId,

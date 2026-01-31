@@ -16,9 +16,11 @@ import com.banking.system.transaction.application.mapper.ReceiptMapper;
 import com.banking.system.transaction.application.mapper.TransferDomainMapper;
 import com.banking.system.transaction.application.usecase.GetTransferByIdUseCase;
 import com.banking.system.transaction.application.usecase.TransferMoneyUseCase;
-import com.banking.system.transaction.domain.exception.TransactionNotFoundException;
-import com.banking.system.transaction.domain.exception.TransferAccessDeniedException;
-import com.banking.system.transaction.domain.exception.TransferNotFoundException;
+import com.banking.system.transaction.domain.exception.KycNotApprovedException;
+import com.banking.system.transaction.domain.exception.denied.AccountAccessDeniedException;
+import com.banking.system.transaction.domain.exception.denied.TransferAccessDeniedException;
+import com.banking.system.transaction.domain.exception.notfound.TransactionNotFoundException;
+import com.banking.system.transaction.domain.exception.notfound.TransferNotFoundException;
 import com.banking.system.transaction.domain.model.Description;
 import com.banking.system.transaction.domain.model.IdempotencyKey;
 import com.banking.system.transaction.domain.model.Transfer;
@@ -52,10 +54,12 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     public TransferReceipt transfer(TransferMoneyCommand command, UUID userId) {
         log.info("Initiating transfer from account {}", command.fromAccountId());
 
-        Account sourceAccount = findAccount(command.fromAccountId(), "Source");
-        Account targetAccount = resolveTargetAccount(command);
+        Account sourceAccount = accountRepositoryPort.findById(command.fromAccountId())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + command.fromAccountId()));
 
         validateOwnership(sourceAccount, userId);
+
+        Account targetAccount = resolveTargetAccount(command); // search by alias or account number
 
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
 
@@ -68,32 +72,27 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
             return ReceiptMapper.toTransferReceipt(existingTransfer.get(), sourceAccount, targetAccount, debitTx);
         }
 
-        try {
-            TransferExecution execution = transferDomainService.execute(
-                    sourceAccount,
-                    targetAccount,
-                    command.category(),
-                    toMoney(command.amount(), command.currency()),
-                    new Description(command.description()),
-                    toFeeAmount(command),
-                    idempotencyKey
-            );
+        TransferExecution execution = transferDomainService.execute(
+                sourceAccount,
+                targetAccount,
+                command.category(),
+                toMoney(command.amount(), command.currency()),
+                new Description(command.description()),
+                toFeeAmount(command),
+                idempotencyKey
+        );
 
-            persistExecution(execution, sourceAccount, targetAccount);
+        Transfer transferSaved = persistExecution(execution, sourceAccount, targetAccount);
 
-            log.info("Transfer completed successfully for idempotency key {}", idempotencyKey.value());
-            // Return receipt for confirmation/voucher
-            return ReceiptMapper.toTransferReceipt(
-                    execution.transfer(),
-                    sourceAccount,
-                    targetAccount,
-                    execution.debitTransaction()
-            );
+        log.info("Transfer completed successfully for idempotency key {}", idempotencyKey.value());
 
-        } catch (DomainException e) {
-            log.error("Transfer failed: {}", e.getMessage());
-            throw e;
-        }
+        // Return receipt for confirmation/voucher
+        return ReceiptMapper.toTransferReceipt(
+                transferSaved,
+                sourceAccount,
+                targetAccount,
+                execution.debitTransaction()
+        );
     }
 
     @Override
@@ -102,12 +101,12 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
         var customer = customerRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
 
-        Transfer transfer = transferRepositoryPort.findById(transferId)
+        var transfer = transferRepositoryPort.findById(transferId)
                 .orElseThrow(() -> new TransferNotFoundException("Transfer not found: " + transferId));
 
-        Account sourceAccount = accountRepositoryPort.findById(transfer.getSourceAccountId())
+        var sourceAccount = accountRepositoryPort.findById(transfer.getSourceAccountId())
                 .orElseThrow(() -> new AccountNotFoundException("Source account not found"));
-        Account destinationAccount = accountRepositoryPort.findById(transfer.getDestinationAccountId())
+        var destinationAccount = accountRepositoryPort.findById(transfer.getDestinationAccountId())
                 .orElseThrow(() -> new AccountNotFoundException("Destination account not found"));
 
         boolean isOwnerOfSource = sourceAccount.getCustomerId().equals(customer.getId());
@@ -124,7 +123,7 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     @Override
     @Transactional(readOnly = true)
     public TransferResult findById(UUID transferId) {
-        Transfer transfer = transferRepositoryPort.findById(transferId)
+        var transfer = transferRepositoryPort.findById(transferId)
                 .orElseThrow(() -> new TransferNotFoundException("Transfer not found: " + transferId));
 
         return TransferDomainMapper.toResult(transfer);
@@ -137,11 +136,6 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
         }// if alias is null then search by account number
         return accountRepositoryPort.findByAccountNumber(command.toAccountNumber())
                 .orElseThrow(() -> new AccountNotFoundException("Target account not found for account number: " + command.toAccountNumber()));
-    }
-
-    private Account findAccount(UUID accountId, String label) {
-        return accountRepositoryPort.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException(label + " account not found"));
     }
 
     private Money toMoney(BigDecimal amount, String currency) {
@@ -158,7 +152,7 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
         return Money.of(command.feeAmount(), MoneyCurrency.ofCode(command.feeCurrency()));
     }
 
-    private void persistExecution(TransferExecution execution, Account sourceAccount, Account targetAccount) {
+    private Transfer persistExecution(TransferExecution execution, Account sourceAccount, Account targetAccount) {
         // Register transactions in PENDING status
         var savedDebit = transactionAuditService.registerTransactionAudit(execution.debitTransaction());
         var savedCredit = transactionAuditService.registerTransactionAudit(execution.creditTransaction());
@@ -173,7 +167,19 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
             accountRepositoryPort.save(targetAccount);
 
             // Save transfer
-            transferRepositoryPort.save(execution.transfer());
+            var transferWithIds = Transfer.createNew(
+                    execution.transfer().getSourceAccountId(),
+                    execution.transfer().getDestinationAccountId(),
+                    savedDebit.getId(),
+                    savedCredit.getId(),
+                    execution.transfer().getCategory(),
+                    execution.transfer().getAmount(),
+                    execution.transfer().getDescription(),
+                    execution.transfer().getFeeAmount(),
+                    savedFee != null ? savedFee.getId() : null,
+                    execution.transfer().getIdempotencyKey()
+            );
+            var transferSaved = transferRepositoryPort.save(transferWithIds);
 
             // Mark transactions as COMPLETED
             transactionAuditService.transactionCompleted(savedDebit.getId());
@@ -181,7 +187,8 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
             if (savedFee != null) {
                 transactionAuditService.transactionCompleted(savedFee.getId());
             }
-        } catch (Exception e) {
+            return transferSaved;
+        } catch (DomainException e) {
             // Mark transactions as FAILED
             transactionAuditService.transactionFailed(savedDebit.getId());
             transactionAuditService.transactionFailed(savedCredit.getId());
@@ -194,8 +201,12 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
     }
 
     private void validateOwnership(Account sourceAccount, UUID userId) {
-        Customer customer = customerRepositoryPort.findByUserId(userId)
+        var customer = customerRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
+
+        if (!customer.isKycApproved()) {
+            throw new KycNotApprovedException("Customer KYC not approved");
+        }
 
         if (!sourceAccount.getCustomerId().equals(customer.getId())) {
             throw new TransferAccessDeniedException("Source account does not belong to the authenticated user");

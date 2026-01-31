@@ -58,9 +58,13 @@ public class TransferDomainService {
         Transaction creditTx = createCreditTransaction(targetAccount, amount, description);
 
         Transfer transfer = createTransfer(
-                sourceAccount, targetAccount,
-                debitTx, creditTx, feeTx,
-                category, amount, description, feeAmount, idempotencyKey
+                sourceAccount,
+                targetAccount,
+                category,
+                amount,
+                description,
+                feeAmount,
+                idempotencyKey
         );
 
         return new TransferExecution(debitTx, creditTx, feeTx, transfer);
@@ -114,9 +118,6 @@ public class TransferDomainService {
     private Transfer createTransfer(
             Account sourceAccount,
             Account targetAccount,
-            Transaction debitTx,
-            Transaction creditTx,
-            Transaction feeTx,
             TransferCategory category,
             Money amount,
             Description description,
@@ -126,13 +127,13 @@ public class TransferDomainService {
         return Transfer.createNew(
                 sourceAccount.getId(),
                 targetAccount.getId(),
-                debitTx.getId(),
-                creditTx.getId(),
+                null,
+                null,
                 category,
                 amount,
                 description,
                 feeAmount,
-                feeTx != null ? feeTx.getId() : null,
+                null,
                 idempotencyKey
         );
     }

@@ -17,6 +17,7 @@ public record TransferMoneyRequest(
         @Pattern(regexp = "^\\d{22}$", message = "Account number must be exactly 22 digits")
         String toAccountNumber,
 
+        @Positive
         @NotNull(message = "Amount is required")
         @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
         @Digits(integer = 15, fraction = 2, message = "Amount must have a maximum of 19 integer digits and 2 decimal places")
@@ -26,15 +27,15 @@ public record TransferMoneyRequest(
         @Size(min = 3, max = 3, message = "Currency must be a 3-letter ISO code (e.g., USD, EUR)")
         String currency,
 
+        @Positive
         @DecimalMin(value = "0.00", message = "Fee amount cannot be negative")
         @Digits(integer = 15, fraction = 2, message = "Fee amount must have a maximum of 19 integer digits and 2 decimal places")
         BigDecimal feeAmount,
 
-        @NotNull(message = "Transfer category is required")
-        TransferCategory category,
-
         @Size(min = 3, max = 3, message = "Fee currency must be a 3-letter ISO code (e.g., ARS, USD)")
         String feeCurrency,
+
+        TransferCategory category,
 
         @Size(max = 255, message = "Description cannot exceed 255 characters")
         String description,

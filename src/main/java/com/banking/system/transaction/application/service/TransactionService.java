@@ -7,7 +7,6 @@ import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
 import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
-import com.banking.system.common.domain.exception.DomainException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
 import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
@@ -17,14 +16,12 @@ import com.banking.system.transaction.application.dto.receipt.TransactionReceipt
 import com.banking.system.transaction.application.dto.result.TransactionResult;
 import com.banking.system.transaction.application.mapper.ReceiptMapper;
 import com.banking.system.transaction.application.mapper.TransactionDomainMapper;
-import com.banking.system.transaction.application.usecase.DepositUseCase;
-import com.banking.system.transaction.application.usecase.GetAllTransactionsByAccountUseCase;
-import com.banking.system.transaction.application.usecase.GetTransactionByIdUseCase;
-import com.banking.system.transaction.application.usecase.WithdrawUseCase;
-import com.banking.system.transaction.domain.exception.AccountAccessDeniedException;
+import com.banking.system.transaction.application.usecase.*;
+import com.banking.system.transaction.domain.exception.InvalidTransactionException;
 import com.banking.system.transaction.domain.exception.KycNotApprovedException;
-import com.banking.system.transaction.domain.exception.TransactionAlreadyExistException;
-import com.banking.system.transaction.domain.exception.TransactionNotFoundException;
+import com.banking.system.transaction.domain.exception.alreadyexist.TransactionAlreadyExistException;
+import com.banking.system.transaction.domain.exception.denied.AccountAccessDeniedException;
+import com.banking.system.transaction.domain.exception.notfound.TransactionNotFoundException;
 import com.banking.system.transaction.domain.model.*;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -41,7 +40,8 @@ public class TransactionService implements
         DepositUseCase,
         WithdrawUseCase,
         GetTransactionByIdUseCase,
-        GetAllTransactionsByAccountUseCase {
+        GetAllTransactionsByAccountUseCase,
+        GetAllTransactionsByCustomerUseCase {
     private final TransactionRepositoryPort transactionRepositoryPort;
     private final CustomerRepositoryPort customerRepositoryPort;
     private final AccountRepositoryPort accountRepositoryPort;
@@ -52,11 +52,14 @@ public class TransactionService implements
     public TransactionReceipt deposit(DepositMoneyCommand command, UUID accountId, UUID userId) {
         log.info("Starting deposit process for userId: {}", userId);
 
+        Money depositAmount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
+
+        isInvalidTransaction(command.amount(), command.currency(), "deposit");
+
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
         checkIdempotency(idempotencyKey);
 
         Account account = getAuthorizedAccount(accountId, userId);
-        Money depositAmount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
 
         // Calculate balance after the operation BEFORE modifying the account
         Money balanceAfter = account.getBalance().add(depositAmount);
@@ -86,9 +89,17 @@ public class TransactionService implements
             // Return receipt for confirmation/voucher
             return ReceiptMapper.toTransactionReceipt(savedTransaction, account);
         } catch (Exception e) {
+            log.debug("ocurrio un error");
             transactionAuditService.transactionFailed(savedTransaction.getId());
             log.error("Transaction failed for operation deposit, transactionId: {}", savedTransaction.getId(), e);
             throw e;
+        }
+    }
+
+    private void isInvalidTransaction(BigDecimal amount, String currency, String label) {
+        Money transactionAmount = Money.of(amount, MoneyCurrency.ofCode(currency));
+        if (transactionAmount.isZero() || transactionAmount.isNegative()) {
+            throw new InvalidTransactionException(label + " amount must be greater than zero");
         }
     }
 
@@ -97,11 +108,14 @@ public class TransactionService implements
     public TransactionReceipt withdraw(WithdrawMoneyCommand command, UUID accountId, UUID userId) {
         log.info("Starting withdrawal process for userId: {}", userId);
 
+        Money withdrawAmount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
+
+        isInvalidTransaction(command.amount(), command.currency(), "withdrawal");
+
         IdempotencyKey idempotencyKey = IdempotencyKey.from(command.idempotencyKey());
         checkIdempotency(idempotencyKey);
 
         Account account = getAuthorizedAccount(accountId, userId);
-        Money withdrawAmount = Money.of(command.amount(), MoneyCurrency.ofCode(command.currency()));
 
         // Calculate balance after the operation BEFORE modifying the account
         Money balanceAfter = account.getBalance().subtract(withdrawAmount);
@@ -148,6 +162,30 @@ public class TransactionService implements
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PagedResult<TransactionResult> getAllTransactionsByCustomer(UUID userId, PageRequest pageRequest) {
+        var customer = customerRepositoryPort.findByUserId(userId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
+
+        if (!customer.isKycApproved()) {
+            throw new KycNotApprovedException("KYC not approved for the customer");
+        }
+
+        List<Account> accounts = accountRepositoryPort.findAllByCustomerId(customer.getId());
+
+        List<UUID> accountIds = accounts.stream()
+                .map(Account::getId)
+                .toList();
+
+        PagedResult<Transaction> transactions = transactionRepositoryPort
+                .findALlByAccountIds(accountIds, pageRequest);
+
+        return PagedResult.mapContent(transactions, TransactionDomainMapper::toResult);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
     public TransactionResult getTransactionById(UUID transactionId, UUID userId) {
         Customer customer = customerRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));

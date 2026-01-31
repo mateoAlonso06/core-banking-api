@@ -1,4 +1,4 @@
-package com.banking.system.transaction.domain.exception;
+package com.banking.system.transaction.domain.exception.alreadyexist;
 
 import com.banking.system.common.domain.exception.ResourceAlreadyExistsException;
 

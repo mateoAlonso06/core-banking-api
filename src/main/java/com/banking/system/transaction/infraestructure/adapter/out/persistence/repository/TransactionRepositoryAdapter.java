@@ -8,8 +8,10 @@ import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransactionJpaEntityMapper;
 import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
     @Override
     public Transaction save(Transaction transaction) {
         TransactionJpaEntity txJpaEntity = TransactionJpaEntity.builder()
+                .id(transaction.getId())
                 .accountId(transaction.getAccountId())
                 .transactionType(transaction.getTransactionType())
                 .amount(transaction.getAmount().getValue())
@@ -51,10 +54,32 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
                 .map(TransactionJpaEntityMapper::toDomainEntity);
     }
 
+    private static final Sort SORT_BY_EXECUTED_AT_DESC = Sort.by(Sort.Direction.DESC, "executedAt");
+
     @Override
     public PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId) {
-        var pageable = PageMapper.toPageable(pageRequest);
+        var base = PageMapper.toPageable(pageRequest);
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                base.getPageNumber(),
+                base.getPageSize(),
+                SORT_BY_EXECUTED_AT_DESC
+        );
+
         var page = transactionJpaRepository.findAllByAccountId(accountId, pageable);
+        return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
+    }
+
+    @Override
+    public PagedResult<Transaction> findALlByAccountIds(List<UUID> accountIds, PageRequest pageRequest) {
+        var base = PageMapper.toPageable(pageRequest);
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                base.getPageNumber(),
+                base.getPageSize(),
+                SORT_BY_EXECUTED_AT_DESC
+        );
+
+        var page = transactionJpaRepository.findAllByAccountIdIn(accountIds, pageable);
+
         return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
     }
 }

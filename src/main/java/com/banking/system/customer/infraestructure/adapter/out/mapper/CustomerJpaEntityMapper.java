@@ -6,7 +6,7 @@ import com.banking.system.customer.infraestructure.adapter.out.persistence.entit
 public class CustomerJpaEntityMapper {
     public static CustomerJpaEntity toJpaEntity(Customer customer) {
         return CustomerJpaEntity.builder()
-                .id(customer.getId() != null ? customer.getId() : null)
+                .id(customer.getId() != null ? customer.getId() : null) // ternary for reutilization of the mapper for updates
                 .userId(customer.getUserId())
                 .firstName(customer.getPersonName().firstName())
                 .lastName(customer.getPersonName().lastName())

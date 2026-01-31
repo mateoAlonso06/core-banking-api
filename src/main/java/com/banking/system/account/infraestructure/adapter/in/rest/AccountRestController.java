@@ -8,6 +8,7 @@ import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
 import com.banking.system.account.application.usecase.FindAllAccountsByUserId;
 import com.banking.system.account.application.usecase.GetAccountBalanceUseCase;
 import com.banking.system.account.application.usecase.SearchAccountByAliasUseCase;
+import com.banking.system.account.domain.model.AccountType;
 import com.banking.system.account.infraestructure.adapter.in.rest.dto.request.CreateAccountRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +37,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/accounts")
 @Tag(name = "Accounts", description = "Bank account management operations")
 @SecurityRequirement(name = "Bearer Authentication")
-public class AccountRestController {
+public class  AccountRestController {
 
     private final CreateAccountUseCase createAccountUseCase;
     private final FindAccountByIdUseCase findAccountByIdUseCase;
@@ -163,5 +164,19 @@ public class AccountRestController {
             @RequestParam @NotBlank String alias) {
         var result = searchAccountByAliasUseCase.searchByAlias(alias);
         return ResponseEntity.ok().body(result);
+    }
+
+    @Operation(
+            summary = "Get account types",
+            description = "Retrieves the list of available bank account types."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Account types retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token")
+    })
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/types")
+    public ResponseEntity<List<AccountType>> getAccountTypes() {
+        return ResponseEntity.ok().body(List.of(AccountType.values()));
     }
 }

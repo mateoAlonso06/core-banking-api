@@ -4,6 +4,7 @@ import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.domain.model.Transaction;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +16,6 @@ public interface TransactionRepositoryPort {
     Optional<Transaction> findByIdempotencyKey(String idempotencyKey);
 
     PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId);
+
+    PagedResult<Transaction> findALlByAccountIds(List<UUID> accountIds, PageRequest pageRequest);
 }

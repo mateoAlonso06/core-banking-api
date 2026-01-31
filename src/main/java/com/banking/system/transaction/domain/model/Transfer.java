@@ -36,8 +36,6 @@ public class Transfer {
                      Instant executedAt) {
 
         Objects.requireNonNull(destinationAccountId, "Destination account ID cannot be null");
-        Objects.requireNonNull(debitTransactionId, "Debit transaction ID cannot be null");
-        Objects.requireNonNull(creditTransactionId, "Credit transaction ID cannot be null");
         Objects.requireNonNull(amount, "Money cannot be null");
         Objects.requireNonNull(idempotencyKey, "Idempotency key cannot be null");
         Objects.requireNonNull(executedAt, "Executed at timestamp cannot be null");
@@ -72,12 +70,9 @@ public class Transfer {
      *
      * @param sourceAccountId      identifier of the account from which money is transferred (must not be {@code null})
      * @param destinationAccountId identifier of the account to which money is transferred (must not be {@code null})
-     * @param debitTransactionId   identifier of the TRANSFER_OUT transaction on the source account (must not be {@code null})
-     * @param creditTransactionId  identifier of the TRANSFER_IN transaction on the destination account (must not be {@code null})
      * @param amount               {@link Money} value object representing the transfer amount (must not be {@code null})
      * @param description          {@link Description} value object containing transfer details (may be {@code null})
      * @param feeAmount            {@link Money} value object representing the fee charged for the transfer (may be {@code null})
-     * @param feeTransactionId     optional identifier of the fee transaction (may be {@code null})
      * @param idempotencyKey       {@link IdempotencyKey} value object ensuring transfer uniqueness and preventing duplicates (must not be {@code null})
      * @return a new {@link Transfer} instance representing a non-persisted transfer
      */
@@ -99,7 +94,7 @@ public class Transfer {
                 destinationAccountId,
                 debitTransactionId,
                 creditTransactionId,
-                category != null ? category : TransferCategory.OTROS,
+                category != null ? category : TransferCategory.OTROS, // default category
                 amount,
                 feeAmount,
                 description,
