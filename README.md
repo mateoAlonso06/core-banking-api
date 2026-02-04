@@ -23,6 +23,7 @@ A backend core banking system built with **Java 21** and **Spring Boot 3.5**, fo
 | Framework | Spring Boot 3.5.9 |
 | Security | Spring Security 6, JWT (java-jwt 4.5.0), BCrypt |
 | Database | PostgreSQL 16 |
+| Cache / Rate Limiting | Redis 7, Bucket4j, Lettuce |
 | ORM | Spring Data JPA / Hibernate |
 | Migrations | Flyway |
 | Mapping | MapStruct 1.6.3, Lombok |
@@ -70,6 +71,7 @@ Key design decisions:
 - **Domain Events** for cross-module communication (`UserRegisteredEvent` → auto-creates Customer, triggers verification email)
 - **Permission-based authorization** (not role-based) via `@PreAuthorize`
 - **Idempotency keys** on transfers to prevent duplicate processing
+- **Distributed rate limiting** via Redis + Bucket4j (token bucket algorithm) to protect API from abuse
 
 ## Modules
 
@@ -150,7 +152,7 @@ Full interactive documentation available at `/swagger-ui.html` when the applicat
 
 - Java 21
 - Maven 3.8+
-- Docker & Docker Compose (recommended) **or** PostgreSQL 16
+- Docker & Docker Compose (recommended) **or** PostgreSQL 16 + Redis 7
 
 ### Run with Docker Compose (recommended)
 
@@ -163,7 +165,7 @@ cd core-banking-system
 cp .env.example .env
 # Edit .env with your values (see Environment Variables section)
 
-# 3. Start all services
+# 3. Start all services (PostgreSQL, Redis, App)
 docker-compose up --build
 
 # The API will be available at http://localhost:8080
@@ -173,7 +175,7 @@ docker-compose up --build
 ### Run locally
 
 ```bash
-# 1. Start PostgreSQL (port 5432)
+# 1. Start PostgreSQL (port 5432) and Redis (port 6379)
 # 2. Create the database
 createdb core_banking_db
 
@@ -198,6 +200,9 @@ Copy `.env.example` to `.env` and configure:
 | `JWT_SECRET` | JWT signing key (min 32 chars) | `openssl rand -base64 32` |
 | `JWT_EXPIRATION_MS` | Token expiry in ms | `86400000` (24h) |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` |
+| `SPRING_DATA_REDIS_HOST` | Redis host (`redis` in Docker, `localhost` locally) | `localhost` |
+| `SPRING_DATA_REDIS_PORT` | Redis port | `6379` |
+| `SPRING_DATA_REDIS_PASSWORD` | Redis password (optional) | ` ` |
 | `MAIL_USERNAME` | Gmail address for SMTP | `your@gmail.com` |
 | `MAIL_PASSWORD` | Gmail app password | `your_app_password` |
 
