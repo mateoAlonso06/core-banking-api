@@ -1,6 +1,7 @@
-package com.banking.system.auth.infraestructure.adapter.out.security;
+package com.banking.system.auth.infraestructure.adapter.out.filter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.banking.system.auth.infraestructure.adapter.out.security.JwtTokenProvider;
 import com.banking.system.auth.infraestructure.config.SecurityConstants;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -63,6 +63,7 @@ public class TransactionRestController {
 
         return ResponseEntity.ok().build();
     }
+
     @Operation(
             summary = "Get transaction history for customer",
             description = "Retrieves the paginated transaction history only for the user."

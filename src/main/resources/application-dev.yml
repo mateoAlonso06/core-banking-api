@@ -1,0 +1,8 @@
+spring:
+  jpa:
+    show-sql: true
+logging:
+  level:
+    com.banking.system: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
