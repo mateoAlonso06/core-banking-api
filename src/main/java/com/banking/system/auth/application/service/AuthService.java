@@ -11,16 +11,9 @@ import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
 import com.banking.system.auth.application.usecase.FindUserByIdUseCase;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.domain.exception.InvalidCredentalsException;
-import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
-import com.banking.system.auth.domain.exception.UserNotFoundException;
-import com.banking.system.auth.domain.exception.UserNotVerifiedException;
+import com.banking.system.auth.domain.exception.*;
 import com.banking.system.auth.domain.model.*;
 import com.banking.system.auth.domain.port.out.*;
-import com.banking.system.common.domain.Address;
-import com.banking.system.common.domain.IdentityDocument;
-import com.banking.system.common.domain.PersonName;
-import com.banking.system.common.domain.Phone;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,11 +43,15 @@ public class AuthService implements
         User user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new UserNotFoundException("Invalid credentials"));
 
+        // for security verify password is the first check
         if (!passwordHasher.verify(command.password(), user.getPassword().value()))
-            throw new InvalidCredentalsException("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
+
+        if (user.getStatus() == UserStatus.BLOCKED)
+            throw new UserIsLockedException("User account is blocked");
 
         if (user.getStatus() == UserStatus.PENDING_VERIFICATION)
-            throw new UserNotVerifiedException("Please verify your email before logging in");
+            throw new LoginAuthenticationAccessException("Please verify your email before logging in");
 
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
@@ -126,7 +123,7 @@ public class AuthService implements
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!passwordHasher.verify(command.oldPassword(), user.getPassword().value())) {
-            throw new InvalidCredentalsException("Old password is incorrect");
+            throw new InvalidCredentialsException("Old password is incorrect");
         }
 
         Password hashedNewPassword = Password.fromHash(passwordHasher.hash(command.newPassword()));

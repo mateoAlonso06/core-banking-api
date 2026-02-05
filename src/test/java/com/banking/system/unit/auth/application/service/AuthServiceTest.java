@@ -8,7 +8,7 @@ import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.dto.result.UserResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
 import com.banking.system.auth.application.service.AuthService;
-import com.banking.system.auth.domain.exception.InvalidCredentalsException;
+import com.banking.system.auth.domain.exception.InvalidCredentialsException;
 import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
 import com.banking.system.auth.domain.exception.UserNotFoundException;
 import com.banking.system.auth.domain.exception.UserNotVerifiedException;
@@ -150,7 +150,7 @@ class AuthServiceTest {
             when(passwordHasher.verify(wrongPassword, user.getPassword().value())).thenReturn(false);
 
             // When & Then
-            InvalidCredentalsException exception = assertThrows(InvalidCredentalsException.class, () ->
+            InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
                     authService.login(command)
             );
 
@@ -534,7 +534,7 @@ class AuthServiceTest {
             when(passwordHasher.verify(wrongOldPassword, user.getPassword().value())).thenReturn(false);
 
             // When & Then
-            InvalidCredentalsException exception = assertThrows(InvalidCredentalsException.class, () ->
+            InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
                     authService.changePassword(userId, command)
             );
 

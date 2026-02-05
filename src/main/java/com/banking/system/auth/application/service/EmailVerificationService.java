@@ -6,6 +6,7 @@ import com.banking.system.auth.application.event.publisher.UserEventPublisher;
 import com.banking.system.auth.application.usecase.ResendVerificationEmailUseCase;
 import com.banking.system.auth.application.usecase.VerifyEmailUseCase;
 import com.banking.system.auth.domain.exception.InvalidVerificationTokenException;
+import com.banking.system.auth.domain.exception.UserIsAlreadyProcessedException;
 import com.banking.system.auth.domain.exception.UserNotVerifiedException;
 import com.banking.system.auth.domain.model.User;
 import com.banking.system.auth.domain.model.UserStatus;
@@ -61,7 +62,7 @@ public class EmailVerificationService implements VerifyEmailUseCase, ResendVerif
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (user.getStatus() != UserStatus.PENDING_VERIFICATION) {
-            throw new UserNotVerifiedException("User is already verified");
+            throw new UserIsAlreadyProcessedException("User is already verified");
         }
 
         VerificationToken token = VerificationToken.createNew(user.getId());

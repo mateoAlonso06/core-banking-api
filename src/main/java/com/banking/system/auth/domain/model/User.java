@@ -1,5 +1,6 @@
 package com.banking.system.auth.domain.model;
 
+import com.banking.system.auth.domain.exception.UserIsAlreadyProcessedException;
 import lombok.*;
 
 import java.util.Objects;
@@ -84,14 +85,14 @@ public class User {
 
     public void activate() {
         if (this.status != UserStatus.PENDING_VERIFICATION)
-            throw new IllegalStateException("Only users with PENDING_VERIFICATION status can be activated");
+            throw new UserIsAlreadyProcessedException("Only users with PENDING_VERIFICATION status can be activated");
 
         this.status = UserStatus.ACTIVE;
     }
 
     public void block() {
         if (this.status != UserStatus.ACTIVE)
-            throw new IllegalStateException("Only ACTIVE users can be blocked");
+            throw new UserIsAlreadyProcessedException("Only ACTIVE users can be blocked");
 
         this.status = UserStatus.BLOCKED;
     }

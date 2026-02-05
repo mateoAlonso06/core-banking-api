@@ -1,6 +1,5 @@
 package com.banking.system.auth.infraestructure.adapter.in.rest;
 
-import com.banking.system.auth.application.dto.command.LoginCommand;
 import com.banking.system.auth.application.dto.command.ResendVerificationCommand;
 import com.banking.system.auth.application.dto.command.VerifyEmailCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
@@ -48,9 +47,7 @@ public class AuthRestController {
     })
     @PostMapping("/register")
     public ResponseEntity<RegisterResult> register(@RequestBody @Valid RegisterUserRequest request) {
-        var command = request.toCommand();
-
-        var result = registerUseCase.register(command);
+        var result = registerUseCase.register(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -61,15 +58,13 @@ public class AuthRestController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful, JWT token returned"),
             @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "423", description = "User is blocked"),
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResult> login(@RequestBody @Valid LoginRequest request) {
-        var command = new LoginCommand(
-                request.email(),
-                request.password()
-        );
-        var result = loginUseCase.login(command);
+        var result = loginUseCase.login(request.toCommand());
         return ResponseEntity.ok(result);
     }
 
@@ -79,7 +74,7 @@ public class AuthRestController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Email verified successfully"),
-            @ApiResponse(responseCode = "422", description = "Invalid or expired verification token")
+            @ApiResponse(responseCode = "422", description = "Invalid or expired verification token or user already verified")
     })
     @PostMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@RequestBody @Valid VerifyEmailRequest request) {
@@ -93,7 +88,7 @@ public class AuthRestController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Verification email resent"),
-            @ApiResponse(responseCode = "403", description = "User is already verified"),
+            @ApiResponse(responseCode = "422", description = "User is already verified"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PostMapping("/resend-verification")

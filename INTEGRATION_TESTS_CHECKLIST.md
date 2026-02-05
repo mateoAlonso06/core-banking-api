@@ -34,9 +34,9 @@ Este documento lista los endpoints que requieren tests de integración, ordenado
 | 3 | Contraseña muy corta (<8 chars) | Validation | Low | ✅ DONE |
 | 4 | Campos requeridos faltantes | Validation | Low | ✅ DONE |
 | 5 | Email duplicado (409 Conflict) | Business Rule | Medium | ✅ DONE |
-| 6 | Número de documento duplicado | Business Rule | Medium | ⬜ PENDING |
-| 7 | Usuario menor de edad (birthDate) | Validation | Low | ⬜ PENDING |
-| 8 | Formato de teléfono inválido | Validation | Low | ⬜ PENDING |
+| 6 | Número de documento duplicado | Business Rule | Medium | ✅ DONE |
+| 7 | Usuario menor de edad (birthDate) | Validation | Low | ✅ DONE|
+| 8 | Formato de teléfono inválido | Validation | Low | ✅ DONE |
 
 **Archivo de test:** `AuthRestControllerIT.java`
 
@@ -51,8 +51,8 @@ Este documento lista los endpoints que requieren tests de integración, ordenado
 | 3 | Usuario no existe (401) | Auth Error | Low | ✅ DONE |
 | 4 | Email con formato inválido | Validation | Low | ✅ DONE |
 | 5 | Contraseña corta en request | Validation | Low | ✅ DONE |
-| 6 | Usuario con email no verificado | Auth Error | Medium | ⬜ PENDING |
-| 7 | Rate limiting excedido (429) | Security | High | ⬜ PENDING |
+| 6 | Usuario con email no verificado | Auth Error | Medium | ✅ DONE |
+| 7 | Rate limiting excedido (429) | Security | High | ✅ DONE |
 
 ---
 
@@ -60,10 +60,10 @@ Este documento lista los endpoints que requieren tests de integración, ordenado
 
 | # | Caso de Test | Tipo | Complejidad | Estado |
 |---|--------------|------|-------------|--------|
-| 1 | Verificación exitosa con token válido | Success | Medium | ⬜ PENDING |
-| 2 | Token de verificación inválido | Auth Error | Low | ⬜ PENDING |
-| 3 | Token de verificación expirado | Auth Error | Medium | ⬜ PENDING |
-| 4 | Usuario ya verificado previamente | Business Rule | Low | ⬜ PENDING |
+| 1 | Verificación exitosa con token válido | Success | Medium | ✅ DONE |
+| 2 | Token de verificación inválido | Auth Error | Low | ✅ DONE |
+| 3 | Token de verificación expirado | Auth Error | Medium | ✅ DONE |
+| 4 | Usuario ya verificado previamente | Business Rule | Low | ✅ DONE |
 
 ---
 

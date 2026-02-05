@@ -1,5 +1,6 @@
 package com.banking.system.common.infraestructure.exception;
 
+import com.banking.system.auth.domain.exception.UserIsLockedException;
 import com.banking.system.common.domain.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -84,6 +85,12 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
                 ex.getMessage());
+    }
+
+    @ExceptionHandler(UserIsLockedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountLocked(UserIsLockedException ex) {
+        log.warn("Account locked: {}", ex.getMessage());
+        return buildResponse(HttpStatus.LOCKED, "Locked", ex.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String error, String message) {

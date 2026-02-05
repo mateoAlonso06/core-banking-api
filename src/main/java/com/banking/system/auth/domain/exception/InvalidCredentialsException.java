@@ -2,8 +2,8 @@ package com.banking.system.auth.domain.exception;
 
 import com.banking.system.common.domain.exception.AuthenticationException;
 
-public class InvalidCredentalsException extends AuthenticationException {
-    public InvalidCredentalsException(String message) {
+public class InvalidCredentialsException extends AuthenticationException {
+    public InvalidCredentialsException(String message) {
         super(message);
     }
 }

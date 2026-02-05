@@ -5,29 +5,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Build and Test
+
+**Test Profiles Strategy:**
+The project uses Maven profiles to separate fast unit tests from slow integration tests (TestContainers).
+
 ```bash
 # Clean and compile
 mvn clean compile
 
-# Run all tests
-mvn test
+# Run ONLY unit tests (DEFAULT - fast, ~1-2 minutes)
+mvn clean verify
+# or explicitly:
+mvn clean verify -Punit-tests
+
+# Run ONLY integration tests (slow, ~30-60 seconds first run, ~10-15 seconds with container reuse)
+mvn clean verify -Pintegration-tests
+
+# Run ALL tests (unit + integration)
+mvn clean verify -Pall-tests
 
 # Run tests with coverage report (JaCoCo)
 mvn test jacoco:report
 # Coverage report: target/site/jacoco/index.html
 
-# Run specific test class
+# Run specific test class (unit test)
 mvn test -Dtest=ClassName
 
-# Run specific test method
-mvn test -Dtest=ClassName#methodName
+# Run specific integration test
+mvn verify -Pintegration-tests -Dit.test=ClassNameIT
 
-# Package application
+# Package application (runs unit tests only)
 mvn clean package
+
+# Package with all tests
+mvn clean package -Pall-tests
 
 # Skip tests during packaging
 mvn clean package -DskipTests
 ```
+
+**Test Naming Convention:**
+- Unit tests: `*Test.java` (e.g., `CustomerServiceTest.java`)
+- Integration tests: `*IT.java` (e.g., `CustomerServiceIT.java`)
+
+**TestContainers Optimization:**
+- Container reuse enabled via `testcontainers.properties`
+- Singleton pattern in `AbstractIntegrationTest`
+- First integration test run: ~30-60 seconds (container starts)
+- Subsequent runs: ~10-15 seconds (container reused)
+- Use lightweight `postgres:16-alpine` image
+
+**Recommended Workflow:**
+1. **Local development:** Run `mvn verify` (unit tests only, fast feedback)
+2. **Before commit:** Run `mvn verify -Pintegration-tests` (verify integrations)
+3. **CI/CD:** Run `mvn verify -Pall-tests` (complete test suite)
 
 ### Running the Application
 

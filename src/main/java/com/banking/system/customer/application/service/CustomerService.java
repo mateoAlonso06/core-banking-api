@@ -13,12 +13,14 @@ import com.banking.system.customer.application.usecase.*;
 import com.banking.system.customer.domain.exception.CustomerAlreadyExistsException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
 import com.banking.system.customer.domain.exception.DocumenterNumberAlreadyInUseException;
+import com.banking.system.customer.domain.exception.InvalidAgeException;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -79,6 +81,8 @@ public class CustomerService implements
         if (customerRepository.existsByDocumentNumber(command.documentNumber())) {
             throw new DocumenterNumberAlreadyInUseException("Document number already in use");
         }
+
+        isUnderAge(command.birthDate());
 
         var customer = CustomerMapper.toDomain(command);
         var customerSaved = customerRepository.save(customer);
@@ -160,5 +164,13 @@ public class CustomerService implements
         var customers = customerRepository.findAll(pageRequest);
 
         return PagedResult.mapContent(customers, CustomerResult::fromDomain);
+    }
+
+    private void isUnderAge(LocalDate birthDate) {
+        LocalDate today = LocalDate.now();
+        LocalDate adultDate = today.minusYears(18);
+        if (birthDate.isAfter(adultDate)) {
+            throw new InvalidAgeException("Customer must be at least 18 years old");
+        }
     }
 }

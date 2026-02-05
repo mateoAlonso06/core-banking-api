@@ -14,24 +14,24 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class VerificationTokenRepositoryAdapter implements VerificationTokenRepositoryPort {
 
-    private final VerificationTokenJpaRepository verificationTokenJpaRepository;
+    private final SpringVerificationTokenJpaRepository springVerificationTokenJpaRepository;
 
     @Override
     public VerificationToken save(VerificationToken token) {
         VerificationTokenJpaEntity entity = VerificationTokenJpaMapper.toJpaEntity(token);
-        VerificationTokenJpaEntity saved = verificationTokenJpaRepository.save(entity);
+        VerificationTokenJpaEntity saved = springVerificationTokenJpaRepository.save(entity);
         return VerificationTokenJpaMapper.toDomain(saved);
     }
 
     @Override
     public Optional<VerificationToken> findByToken(String token) {
-        return verificationTokenJpaRepository.findByToken(token)
+        return springVerificationTokenJpaRepository.findByToken(token)
                 .map(VerificationTokenJpaMapper::toDomain);
     }
 
     @Override
     public Optional<VerificationToken> findLatestByUserId(UUID userId) {
-        return verificationTokenJpaRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
+        return springVerificationTokenJpaRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
                 .map(VerificationTokenJpaMapper::toDomain);
     }
 }
