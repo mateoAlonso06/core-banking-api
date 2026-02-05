@@ -54,6 +54,7 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred. Please try again later.");
     }
 
+    // Catches @Valid validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult()

@@ -12,6 +12,7 @@ import com.banking.system.customer.application.mapper.CustomerMapper;
 import com.banking.system.customer.application.usecase.*;
 import com.banking.system.customer.domain.exception.CustomerAlreadyExistsException;
 import com.banking.system.customer.domain.exception.CustomerNotFoundException;
+import com.banking.system.customer.domain.exception.DocumenterNumberAlreadyInUseException;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,25 +68,22 @@ public class CustomerService implements
 
     @Override
     @Transactional
-    public CustomerResult createCustomer(CreateCustomerCommand command) {
+    public void createCustomer(CreateCustomerCommand command) {
         log.info("Creating customer with userId: {}", command.userId());
         // Ensures idempotency based on userId
         if (customerRepository.existsByUserId(command.userId())) {
-            return customerRepository.findByUserId(command.userId())
-                    .map(CustomerResult::fromDomain)
-                    .orElseThrow();
+            log.warn("Customer already exists for userId: {}", command.userId());
+            throw new CustomerAlreadyExistsException("Customer already exists for user: " + command.userId());
         }
 
         if (customerRepository.existsByDocumentNumber(command.documentNumber())) {
-            throw new CustomerAlreadyExistsException("Customer already exists with document number: " + command.documentNumber());
+            throw new DocumenterNumberAlreadyInUseException("Document number already in use");
         }
 
         var customer = CustomerMapper.toDomain(command);
         var customerSaved = customerRepository.save(customer);
 
         log.info("Customer created with id: {}", customerSaved.getId());
-
-        return CustomerResult.fromDomain(customerSaved);
     }
 
     @Override
@@ -115,6 +113,7 @@ public class CustomerService implements
     @Override
     @Transactional
     public CustomerResult updateCustomer(UpdateCustomerCommand command, UUID userId) {
+        log.info("Updating customer for userId: {}", userId);
         var customer = customerRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for user: " + userId));
 
@@ -151,6 +150,7 @@ public class CustomerService implements
         }
 
         var saved = customerRepository.save(customer);
+        log.info("Customer updated for userId: {}", userId);
         return CustomerResult.fromDomain(saved);
     }
 

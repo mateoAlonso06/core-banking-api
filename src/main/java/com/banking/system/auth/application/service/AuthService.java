@@ -93,8 +93,6 @@ public class AuthService implements
         );
         User savedUser = userRepository.save(user);
 
-        // Validations of fields before create another transaction after commit
-        validateFieldsForCustomer(command);
         userEventPublisher.publishUserRegisteredEvent(savedUser, command);
 
         VerificationToken verificationToken = VerificationToken.createNew(savedUser.getId());
@@ -137,20 +135,5 @@ public class AuthService implements
         userRepository.save(user);
 
         log.info("Password changed successfully for user with ID: {}", userId);
-    }
-
-    private void validateFieldsForCustomer(RegisterCommand command) {
-        try {
-            PersonName fullName = new PersonName(command.firstName(), command.lastName());
-            IdentityDocument identityDocument = new IdentityDocument(command.documentNumber(), command.documentType());
-            Address residenceAddress = new Address(
-                    command.address(),
-                    command.city(),
-                    command.country()
-            );
-            Phone phone = new Phone(command.phone());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid customer details: " + e.getMessage(), e);
-        }
     }
 }

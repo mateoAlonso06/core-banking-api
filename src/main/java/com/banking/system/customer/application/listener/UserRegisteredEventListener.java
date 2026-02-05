@@ -46,8 +46,8 @@ public class UserRegisteredEventListener {
      * maintaining eventual consistency between modules.
      * </p>
      */
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @Transactional(propagation = Propagation.MANDATORY)
     public void on(UserRegisteredEvent event) {
         CreateCustomerCommand command = new CreateCustomerCommand(
                 event.userId(),

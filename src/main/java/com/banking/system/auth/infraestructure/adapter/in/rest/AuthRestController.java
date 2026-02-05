@@ -43,7 +43,8 @@ public class AuthRestController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User registered successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
-            @ApiResponse(responseCode = "409", description = "Email already in use")
+            @ApiResponse(responseCode = "409", description = "Email already in use"),
+            @ApiResponse(responseCode = "422", description = "Invalid data provided")
     })
     @PostMapping("/register")
     public ResponseEntity<RegisterResult> register(@RequestBody @Valid RegisterUserRequest request) {

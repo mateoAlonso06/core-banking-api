@@ -91,6 +91,26 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldFailRegisterWithDuplicateDni() throws Exception {
+        Map<String, Object> registerRequest = createRegisterRequest();
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(notNullValue()))
+                .andExpect(jsonPath("$.email").value(registerRequest.get("email")));
+
+        registerRequest.put("email", "anothermailtest@gmail.com");
+        // same dni number
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void shouldLoginSuccessfully() throws Exception {
         // First, register a user
         Map<String, Object> registerRequest = new HashMap<>();
