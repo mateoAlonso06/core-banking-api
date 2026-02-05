@@ -36,28 +36,11 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.email").value(registerRequest.get("email")));
     }
 
-//    @Test
-//    void shouldRegisterUserSuccessfully() throws Exception {
-//
-//        mockMvc.perform(post("/api/v1/auth/register")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(registerRequest)))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.id").value(notNullValue()))
-//                .andExpect(jsonPath("$.email").value("test@example.com"));
-//    }
-
     @Test
     void shouldFailRegisterWithInvalidEmail() throws Exception {
-        Map<String, Object> registerRequest = new HashMap<>();
-        registerRequest.put("email", "invalid-email");
-        registerRequest.put("password", "SecurePass123");
-        registerRequest.put("firstName", "John");
-        registerRequest.put("lastName", "Doe");
-        registerRequest.put("documentType", "DNI");
-        registerRequest.put("documentNumber", "12345678");
-        registerRequest.put("birthDate", LocalDate.of(1990, 1, 1).toString());
-        registerRequest.put("phone", "+1234567890");
+        Map<String, Object> registerRequest = createRegisterRequest();
+
+        registerRequest.put("email", "invalid-email-format");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,14 +51,8 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
     @Test
     void shouldFailRegisterWithShortPassword() throws Exception {
         Map<String, Object> registerRequest = new HashMap<>();
-        registerRequest.put("email", "test2@example.com");
+
         registerRequest.put("password", "short");
-        registerRequest.put("firstName", "John");
-        registerRequest.put("lastName", "Doe");
-        registerRequest.put("documentType", "DNI");
-        registerRequest.put("documentNumber", "12345678");
-        registerRequest.put("birthDate", LocalDate.of(1990, 1, 1).toString());
-        registerRequest.put("phone", "+1234567890");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -97,26 +74,16 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
 
     @Test
     void shouldFailRegisterWithDuplicateEmail() throws Exception {
-        Map<String, Object> registerRequest = new HashMap<>();
-        registerRequest.put("email", "duplicate@example.com");
-        registerRequest.put("password", "SecurePass123");
-        registerRequest.put("firstName", "John");
-        registerRequest.put("lastName", "Doe");
-        registerRequest.put("documentType", "DNI");
-        registerRequest.put("documentNumber", "12345678");
-        registerRequest.put("birthDate", LocalDate.of(1990, 1, 1).toString());
-        registerRequest.put("phone", "+1234567890");
-        registerRequest.put("address", "123 Main St");
-        registerRequest.put("city", "New York");
-        registerRequest.put("country", "US");
+        Map<String, Object> registerRequest = createRegisterRequest();
 
         // First registration
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(notNullValue()))
+                .andExpect(jsonPath("$.email").value(registerRequest.get("email")));
 
-        // Second registration with same email
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
@@ -234,10 +201,10 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
         request.put("documentType", "DNI");
         request.put("documentNumber", "12345678");
         request.put("birthDate", LocalDate.of(1990, 1, 1).toString());
-        request.put("phone", "+1234567890");
-        request.put("city", "New York");
-        request.put("country", "US");
-        request.put("address", "123 Main St");
+        request.put("phone", "+5491112345678"); // Formato argentino móvil válido
+        request.put("city", "Buenos Aires");
+        request.put("country", "AR");
+        request.put("address", "Av. Corrientes 1234");
 
         return request;
     }

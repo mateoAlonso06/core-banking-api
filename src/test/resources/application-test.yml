@@ -17,7 +17,7 @@ spring:
   # 2. JPA / HIBERNATE
   jpa:
     hibernate:
-      ddl-auto: validate # Recomendado para tests: crea y destruye
+      ddl-auto: validate # Flyway maneja el esquema, Hibernate solo valida
     show-sql: false # Útil para ver qué pasa en el test
     properties:
       hibernate:

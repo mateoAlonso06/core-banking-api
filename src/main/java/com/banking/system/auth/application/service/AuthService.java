@@ -14,18 +14,13 @@ import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.InvalidCredentalsException;
 import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
 import com.banking.system.auth.domain.exception.UserNotFoundException;
-import com.banking.system.auth.domain.model.Email;
-import com.banking.system.auth.domain.model.Password;
-import com.banking.system.auth.domain.model.Role;
-import com.banking.system.auth.domain.model.User;
-import com.banking.system.auth.domain.port.out.PasswordHasher;
-import com.banking.system.auth.domain.port.out.RoleRepositoryPort;
-import com.banking.system.auth.domain.port.out.TokenGenerator;
-import com.banking.system.auth.domain.port.out.UserRepositoryPort;
-import com.banking.system.auth.domain.port.out.VerificationTokenRepositoryPort;
-import com.banking.system.auth.domain.model.VerificationToken;
-import com.banking.system.auth.domain.model.UserStatus;
 import com.banking.system.auth.domain.exception.UserNotVerifiedException;
+import com.banking.system.auth.domain.model.*;
+import com.banking.system.auth.domain.port.out.*;
+import com.banking.system.common.domain.Address;
+import com.banking.system.common.domain.IdentityDocument;
+import com.banking.system.common.domain.PersonName;
+import com.banking.system.common.domain.Phone;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -98,6 +93,8 @@ public class AuthService implements
         );
         User savedUser = userRepository.save(user);
 
+        // Validations of fields before create another transaction after commit
+        validateFieldsForCustomer(command);
         userEventPublisher.publishUserRegisteredEvent(savedUser, command);
 
         VerificationToken verificationToken = VerificationToken.createNew(savedUser.getId());
@@ -140,5 +137,20 @@ public class AuthService implements
         userRepository.save(user);
 
         log.info("Password changed successfully for user with ID: {}", userId);
+    }
+
+    private void validateFieldsForCustomer(RegisterCommand command) {
+        try {
+            PersonName fullName = new PersonName(command.firstName(), command.lastName());
+            IdentityDocument identityDocument = new IdentityDocument(command.documentNumber(), command.documentType());
+            Address residenceAddress = new Address(
+                    command.address(),
+                    command.city(),
+                    command.country()
+            );
+            Phone phone = new Phone(command.phone());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid customer details: " + e.getMessage(), e);
+        }
     }
 }

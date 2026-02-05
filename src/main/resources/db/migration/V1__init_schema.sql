@@ -1,6 +1,9 @@
 -- ============================================================================
--- V1__init_migration.sql
--- Core Banking System - Initial Schema
+-- V1__init_schema.sql
+-- Core Banking System - Initial Schema (Consolidated)
+-- ============================================================================
+-- This consolidated migration represents the complete database schema.
+-- It includes all changes from previous migrations (V1-V11).
 -- ============================================================================
 
 -- ============================================================================
@@ -14,7 +17,7 @@ CREATE TABLE users
     email                 VARCHAR(255) UNIQUE NOT NULL,
     password_hash         VARCHAR(255)        NOT NULL,
     status                VARCHAR(20)         NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, BLOCKED, PENDING_VERIFICATION
-    role                  VARCHAR(50)         NOT NULL,                  -- CUSTOMER, ADMIN, BRANCH_MANAGER
+    role_id               UUID                NOT NULL,                  -- FK to roles (added in V7)
     created_at            TIMESTAMP           NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMP           NOT NULL DEFAULT NOW(),
     last_login_at         TIMESTAMP,
@@ -36,15 +39,74 @@ CREATE TABLE refresh_tokens
 CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
 CREATE INDEX idx_refresh_tokens_token ON refresh_tokens (token);
 
+-- Email verification tokens (V9)
+CREATE TABLE email_verification_tokens
+(
+    id         UUID PRIMARY KEY             DEFAULT gen_random_uuid(),
+    user_id    UUID                NOT NULL REFERENCES users (id),
+    token      VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP           NOT NULL,
+    used       BOOLEAN             NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP           NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_verification_token ON email_verification_tokens (token);
+
 -- ============================================================================
--- 2. CUSTOMERS
+-- 2. ROLES & PERMISSIONS (V5)
+-- ============================================================================
+
+-- Permissions table
+CREATE TABLE permissions
+(
+    id          UUID PRIMARY KEY             DEFAULT gen_random_uuid(),
+    code        VARCHAR(50) UNIQUE  NOT NULL,
+    description VARCHAR(255)        NOT NULL,
+    module      VARCHAR(50)         NOT NULL,
+    created_at  TIMESTAMP           NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_permissions_module ON permissions (module);
+CREATE INDEX idx_permissions_code ON permissions (code);
+
+-- Roles table
+CREATE TABLE roles
+(
+    id          UUID PRIMARY KEY             DEFAULT gen_random_uuid(),
+    name        VARCHAR(50) UNIQUE  NOT NULL,
+    description VARCHAR(255)        NOT NULL,
+    created_at  TIMESTAMP           NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMP           NOT NULL DEFAULT NOW()
+);
+
+-- Role-Permissions relationship (many-to-many)
+CREATE TABLE role_permissions
+(
+    role_id       UUID NOT NULL REFERENCES roles (id) ON DELETE CASCADE,
+    permission_id UUID NOT NULL REFERENCES permissions (id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE INDEX idx_role_permissions_role ON role_permissions (role_id);
+CREATE INDEX idx_role_permissions_permission ON role_permissions (permission_id);
+
+-- Add foreign key from users to roles (V7)
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_role
+        FOREIGN KEY (role_id) REFERENCES roles (id);
+
+CREATE INDEX idx_users_role ON users (role_id);
+
+-- ============================================================================
+-- 3. CUSTOMERS
 -- ============================================================================
 
 -- Bank customer (individual)
+-- Note: No FK to users.id (removed in V2 for bounded context separation)
 CREATE TABLE customers
 (
     id              UUID PRIMARY KEY            DEFAULT gen_random_uuid(),
-    user_id         UUID UNIQUE        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    user_id         UUID UNIQUE        NOT NULL,
 
     -- Personal data
     first_name      VARCHAR(100)       NOT NULL,
@@ -62,6 +124,7 @@ CREATE TABLE customers
     -- Metadata
     customer_since  DATE               NOT NULL DEFAULT CURRENT_DATE,
     kyc_status      VARCHAR(20)                 DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    kyc_verified_at TIMESTAMP WITH TIME ZONE,                      -- Added in V4
     risk_level      VARCHAR(20)                 DEFAULT 'LOW',     -- LOW, MEDIUM, HIGH
 
     created_at      TIMESTAMP          NOT NULL DEFAULT NOW(),
@@ -72,27 +135,25 @@ CREATE INDEX idx_customers_user ON customers (user_id);
 CREATE INDEX idx_customers_document ON customers (document_number);
 
 -- ============================================================================
--- 3. ACCOUNTS
+-- 4. ACCOUNTS
 -- ============================================================================
 
--- Enum types for accounts
-CREATE TYPE account_type AS ENUM ('SAVINGS', 'CHECKING', 'INVESTMENT');
-CREATE TYPE account_status AS ENUM ('ACTIVE', 'BLOCKED', 'CLOSED');
-
 -- Bank account
+-- Note: No FK to customers.id (removed in V2 for bounded context separation)
+-- Note: ENUMs converted to VARCHAR in V4 for JPA compatibility
 CREATE TABLE accounts
 (
     id                     UUID PRIMARY KEY            DEFAULT gen_random_uuid(),
-    customer_id            UUID               NOT NULL REFERENCES customers (id) ON DELETE RESTRICT,
+    customer_id            UUID               NOT NULL,
 
     -- Identification
     account_number         VARCHAR(22) UNIQUE NOT NULL,                -- CBU/CVU (22 digits)
     alias                  VARCHAR(50) UNIQUE,                         -- Optional alias (e.g., "juan.pizza.savings")
 
-    -- Type and status
-    account_type           account_type       NOT NULL,
+    -- Type and status (VARCHAR instead of ENUM - V4)
+    account_type           VARCHAR(20)        NOT NULL,                -- SAVINGS, CHECKING, INVESTMENT
     currency               VARCHAR(3)         NOT NULL DEFAULT 'ARS', -- ISO 4217
-    status                 account_status     NOT NULL DEFAULT 'ACTIVE',
+    status                 VARCHAR(20)        NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, BLOCKED, CLOSED
 
     -- Balances (use NUMERIC for money, NEVER FLOAT)
     balance                NUMERIC(19, 2)     NOT NULL DEFAULT 0.00,
@@ -134,35 +195,19 @@ CREATE TABLE account_holds
 CREATE INDEX idx_holds_account ON account_holds (account_id);
 
 -- ============================================================================
--- 4. TRANSACTIONS
+-- 5. TRANSACTIONS
 -- ============================================================================
 
--- Enum types for transactions
-CREATE TYPE transaction_type AS ENUM (
-    'DEPOSIT',          -- Deposit
-    'WITHDRAWAL',       -- Withdrawal
-    'TRANSFER_OUT',     -- Outgoing transfer
-    'TRANSFER_IN',      -- Incoming transfer
-    'FEE',              -- Fee
-    'INTEREST',         -- Interest
-    'REVERSAL'          -- Transaction reversal
-);
-
-CREATE TYPE transaction_status AS ENUM (
-    'PENDING',
-    'COMPLETED',
-    'FAILED',
-    'REVERSED'
-);
-
 -- Individual transaction (ledger entry)
+-- Note: No FK to accounts.id (removed in V2 for bounded context separation)
+-- Note: ENUMs converted to VARCHAR in V4 for JPA compatibility
 CREATE TABLE transactions
 (
     id               UUID PRIMARY KEY            DEFAULT gen_random_uuid(),
-    account_id       UUID               NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
+    account_id       UUID               NOT NULL,
 
-    -- Transaction data
-    transaction_type transaction_type   NOT NULL,
+    -- Transaction data (VARCHAR instead of ENUM - V4)
+    transaction_type VARCHAR(20)        NOT NULL, -- DEPOSIT, WITHDRAWAL, TRANSFER_OUT, TRANSFER_IN, FEE, INTEREST, REVERSAL
     amount           NUMERIC(19, 2)     NOT NULL,
     currency         VARCHAR(3)         NOT NULL,
 
@@ -173,8 +218,11 @@ CREATE TABLE transactions
     description      VARCHAR(500),
     reference_number VARCHAR(100),
 
-    -- Metadata
-    status           transaction_status NOT NULL DEFAULT 'PENDING',
+    -- Idempotency (V10)
+    idempotency_key  VARCHAR(255),
+
+    -- Metadata (VARCHAR instead of ENUM - V4)
+    status           VARCHAR(20)        NOT NULL DEFAULT 'PENDING', -- PENDING, COMPLETED, FAILED, REVERSED
     executed_at      TIMESTAMP          NOT NULL DEFAULT NOW(),
     created_at       TIMESTAMP          NOT NULL DEFAULT NOW(),
 
@@ -185,19 +233,21 @@ CREATE INDEX idx_transactions_account ON transactions (account_id);
 CREATE INDEX idx_transactions_executed_at ON transactions (executed_at);
 CREATE INDEX idx_transactions_type ON transactions (transaction_type);
 CREATE INDEX idx_transactions_status ON transactions (status);
+CREATE UNIQUE INDEX idx_transaction_idempotency_key ON transactions (idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 -- ============================================================================
--- 5. TRANSFERS
+-- 6. TRANSFERS
 -- ============================================================================
 
 -- Transfer (groups 2 transactions: debit + credit)
+-- Note: No FK to accounts.id (removed in V2 for bounded context separation)
 CREATE TABLE transfers
 (
     id                     UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
 
     -- Accounts involved
-    source_account_id      UUID           NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
-    destination_account_id UUID           NOT NULL REFERENCES accounts (id) ON DELETE RESTRICT,
+    source_account_id      UUID           NOT NULL,
+    destination_account_id UUID           NOT NULL,
 
     -- Related transactions (double-entry bookkeeping)
     debit_transaction_id   UUID UNIQUE    NOT NULL REFERENCES transactions (id),
@@ -210,6 +260,10 @@ CREATE TABLE transfers
 
     -- Fee (if applicable)
     fee_transaction_id     UUID REFERENCES transactions (id),
+    fee_amount             NUMERIC(19, 2),                              -- Added in V3
+
+    -- Category (V11)
+    category               VARCHAR(50)    NOT NULL DEFAULT 'BETWEEN_OWN_ACCOUNTS',
 
     -- Idempotency (prevent duplicate transfers)
     idempotency_key        VARCHAR(100) UNIQUE NOT NULL,
@@ -228,16 +282,17 @@ CREATE INDEX idx_transfers_executed_at ON transfers (executed_at);
 CREATE INDEX idx_transfers_idempotency ON transfers (idempotency_key);
 
 -- ============================================================================
--- 6. AUDIT
+-- 7. AUDIT
 -- ============================================================================
 
 -- Audit log (who did what and when)
+-- Note: No FK to users.id (removed in V2 for bounded context separation)
 CREATE TABLE audit_logs
 (
     id          UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
 
     -- Who
-    user_id     UUID         REFERENCES users (id) ON DELETE SET NULL,
+    user_id     UUID,
     user_email  VARCHAR(255),          -- Denormalized in case user is deleted
     user_role   VARCHAR(50),
 

@@ -1,6 +1,9 @@
 -- ============================================================================
--- V6__seed_roles_permissions_data.sql
+-- V2__seed_initial_data.sql
 -- Core Banking System - Seed Roles and Permissions
+-- ============================================================================
+-- This consolidated migration seeds all initial data for roles and permissions.
+-- It includes all seed data from previous migrations (V6, V8).
 -- ============================================================================
 
 -- ============================================================================
@@ -10,6 +13,7 @@
 -- Customer module permissions
 INSERT INTO permissions (code, description, module) VALUES
 ('CUSTOMER_VIEW_OWN', 'View own customer profile', 'CUSTOMER'),
+('CUSTOMER_UPDATE', 'Update own customer profile', 'CUSTOMER'),
 ('CUSTOMER_VIEW', 'View specific customer profile', 'CUSTOMER'),
 ('CUSTOMER_VIEW_ALL', 'List all customers', 'CUSTOMER'),
 ('KYC_APPROVE', 'Approve KYC verification', 'CUSTOMER'),
@@ -61,12 +65,13 @@ INSERT INTO roles (name, description) VALUES
 -- 3. ASSIGN PERMISSIONS TO ROLES
 -- ============================================================================
 
--- CUSTOMER permissions
+-- CUSTOMER permissions (includes CUSTOMER_UPDATE from V8)
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p
 WHERE r.name = 'CUSTOMER'
   AND p.code IN (
     'CUSTOMER_VIEW_OWN',
+    'CUSTOMER_UPDATE',
     'ACCOUNT_CREATE',
     'ACCOUNT_VIEW_OWN',
     'TRANSACTION_DEPOSIT',
@@ -134,7 +139,7 @@ WHERE r.name = 'AUDITOR'
     'AUDIT_EXPORT'
 );
 
--- ADMIN permissions (ALL permissions)
+-- ADMIN permissions (ALL permissions, including CUSTOMER_UPDATE from V8)
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p
 WHERE r.name = 'ADMIN';
