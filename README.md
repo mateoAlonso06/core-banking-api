@@ -212,17 +212,10 @@ Migrations are managed by Flyway and run automatically on startup. Files are loc
 
 | Migration | Description |
 |---|---|
-| V1 | Initial schema (users, customers, accounts, transactions, transfers, audit_logs) |
-| V2 | Remove cross-boundary foreign keys |
-| V3 | Add fee amount to transfers |
-| V4 | Convert account enums to varchar |
-| V5 | Create roles and permissions tables |
-| V6 | Seed default roles and permissions |
-| V7 | Migrate user role column to FK |
-| V8 | Add CUSTOMER_UPDATE permission |
-| V9 | Add email verification tokens table |
-| V10 | Add idempotency key to transactions |
-| V11 | Add category to transfers |
+| V1 | Consolidated initial schema (users, roles, permissions, customers, accounts, transactions, transfers, audit_logs, email_verification_tokens). Includes all structural changes from previous V1-V11 migrations. |
+| V2 | Seed initial data (default roles: CUSTOMER, ADMIN, BRANCH_MANAGER and their associated permissions) |
+
+The migrations have been consolidated for production deployment. Previous incremental migrations (V1-V11) are now unified into these two scripts.
 
 ## Testing
 
@@ -264,7 +257,7 @@ core-banking-system/
 │   │   │   └── common/            # Shared value objects & exceptions
 │   │   └── resources/
 │   │       ├── application.yml
-│   │       └── db/migration/      # Flyway SQL migrations (V1–V11)
+│   │       └── db/migration/      # Flyway SQL migrations (V1-V2)
 │   └── test/java/                 # Unit & integration tests
 ├── docs/                          # ADRs, DB models, domain invariants
 ├── docker-compose.yml
