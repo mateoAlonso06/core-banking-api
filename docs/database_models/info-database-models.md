@@ -1,1 +1,0 @@
-this models are old for more details about the ddl used check the scripts migrations

@@ -26,26 +26,26 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
 
     @Test
     void shouldRegisterUserSuccessfully() throws Exception {
-        Map<String, Object> registerRequest = new HashMap<>();
-        registerRequest.put("email", "test@example.com");
-        registerRequest.put("password", "SecurePass123");
-        registerRequest.put("firstName", "John");
-        registerRequest.put("lastName", "Doe");
-        registerRequest.put("documentType", "DNI");
-        registerRequest.put("documentNumber", "12345678");
-        registerRequest.put("birthDate", LocalDate.of(1990, 1, 1).toString());
-        registerRequest.put("phone", "+1234567890");
-        registerRequest.put("address", "123 Main St");
-        registerRequest.put("city", "New York");
-        registerRequest.put("country", "US");
+        Map<String, Object> registerRequest = createRegisterRequest();
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(notNullValue()))
-                .andExpect(jsonPath("$.email").value("test@example.com"));
+                .andExpect(jsonPath("$.email").value(registerRequest.get("email")));
     }
+
+//    @Test
+//    void shouldRegisterUserSuccessfully() throws Exception {
+//
+//        mockMvc.perform(post("/api/v1/auth/register")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(registerRequest)))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.id").value(notNullValue()))
+//                .andExpect(jsonPath("$.email").value("test@example.com"));
+//    }
 
     @Test
     void shouldFailRegisterWithInvalidEmail() throws Exception {
@@ -222,5 +222,23 @@ class AuthRestControllerIT extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isBadRequest());
+    }
+
+    private Map<String, Object> createRegisterRequest() {
+        Map<String, Object> request = new HashMap<>();
+
+        request.put("email", "test@example.com");
+        request.put("password", "Secure_Pass123");
+        request.put("firstName", "John");
+        request.put("lastName", "Doe");
+        request.put("documentType", "DNI");
+        request.put("documentNumber", "12345678");
+        request.put("birthDate", LocalDate.of(1990, 1, 1).toString());
+        request.put("phone", "+1234567890");
+        request.put("city", "New York");
+        request.put("country", "US");
+        request.put("address", "123 Main St");
+
+        return request;
     }
 }

@@ -3,6 +3,7 @@ package com.banking.system.auth.infraestructure.config;
 import com.banking.system.auth.infraestructure.adapter.out.filter.JwtAuthenticationFilter;
 import com.banking.system.auth.infraestructure.adapter.out.filter.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,11 +33,11 @@ public class SecurityConfig {
     private String allowedOrigins;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final RateLimitFilter rateLimitFilter;
+    private final ObjectProvider<RateLimitFilter> rateLimitFilterProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        HttpSecurity httpSecurity = http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -44,9 +45,14 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers(SecurityConstants.PUBLIC_URLS).permitAll();
                     auth.anyRequest().authenticated();
-                })
-                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(rateLimitFilter, rateLimitFilter.getClass())
+                });
+
+        // Add rate limit filter only if enabled
+        rateLimitFilterProvider.ifAvailable(rateLimitFilter -> {
+            httpSecurity.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
+        });
+
+        return httpSecurity
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

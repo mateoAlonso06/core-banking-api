@@ -1,20 +1,12 @@
 package com.banking.system.auth.infraestructure.adapter.in.rest;
 
 import com.banking.system.auth.application.dto.command.LoginCommand;
-import com.banking.system.auth.application.dto.result.LoginResult;
-import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.dto.command.ResendVerificationCommand;
 import com.banking.system.auth.application.dto.command.VerifyEmailCommand;
-import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
-import com.banking.system.auth.application.usecase.LoginUseCase;
-import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.application.usecase.ResendVerificationEmailUseCase;
-import com.banking.system.auth.application.usecase.VerifyEmailUseCase;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.ChangeUserPasswordRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.LoginRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.RegisterUserRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.ResendVerificationRequest;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.VerifyEmailRequest;
+import com.banking.system.auth.application.dto.result.LoginResult;
+import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.usecase.*;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,15 +41,16 @@ public class AuthRestController {
             description = "Creates a new user account with email and password. Also creates associated customer profile."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User registered successfully"),
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
             @ApiResponse(responseCode = "409", description = "Email already in use")
     })
     @PostMapping("/register")
     public ResponseEntity<RegisterResult> register(@RequestBody @Valid RegisterUserRequest request) {
         var command = request.toCommand();
+
         var result = registerUseCase.register(command);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @Operation(
