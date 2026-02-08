@@ -10,11 +10,11 @@ import com.banking.system.notification.domain.model.EmailNotification;
 import com.banking.system.notification.domain.model.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 @Slf4j
@@ -22,19 +22,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AccountEmailEventListener {
 
-    private final UserRepositoryPort userRepositoryPort;
     private final AccountEmailService accountEmailService;
+    private final UserRepositoryPort userRepositoryPort;
     private final CustomerRepositoryPort customerRepositoryPort;
 
+    @Async("emailTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(AccountCreatedEvent event) {
         log.info("Received AccountCreatedEvent for accountNumber: {}", event.accountNumber());
 
         User user = userRepositoryPort.findById(event.userId())
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalStateException("User not found: " + event.userId()));
 
         Customer customer = customerRepositoryPort.findById(event.customerId())
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalStateException("Customer not found: " + event.customerId()));
 
         String fullName = customer.getPersonName().fullName();
 

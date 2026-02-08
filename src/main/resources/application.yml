@@ -49,13 +49,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers,retries
       base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
       show-components: when-authorized
   health:
+    circuitbreakers:
+      enabled: true
     db:
       enabled: true
     diskspace:
@@ -72,3 +74,18 @@ logging:
     com.banking.system: INFO
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} %clr(-){faint} %msg%n"
+resilience4j:
+  retry:
+    instances:
+      emailService:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - com.banking.system.notification.domain.exception.EmailDeliveryException
+  circuitbreaker:
+    instances:
+      emailService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
