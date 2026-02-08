@@ -1,6 +1,33 @@
 spring:
+  config:
+    import: "aws-parameterstore:/config/banking-system/"
+  datasource:
+    url: jdbc:postgresql://${AWS_DB_ENDPOINT}:${DB_PORT}/${DB_NAME}
+    username: ${AWS_DB_USERNAME}
+    password: ${spring.datasource.password}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
   flyway:
-    baseline-on-migrate: false
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: true
+
+logging:
+  level:
+    root: WARN
+    com.banking.system: INFO
+
 management:
   endpoint:
     health:

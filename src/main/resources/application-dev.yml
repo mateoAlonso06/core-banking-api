@@ -1,6 +1,15 @@
 spring:
   jpa:
     show-sql: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:banking_system}
+    username: ${DB_USER:banking_user}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 logging:
   level:
     com.banking.system: DEBUG
