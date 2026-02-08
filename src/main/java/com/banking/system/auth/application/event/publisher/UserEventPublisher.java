@@ -10,4 +10,6 @@ public interface UserEventPublisher {
     void publishUserRegisteredEvent(User user, RegisterCommand command);
 
     void publishEmailVerificationRequestedEvent(UUID userId, String email, String token, String firstName);
+
+    void publishTwoFactorCodeRequestedEvent(UUID userId, String email, String code, String firstName);
 }

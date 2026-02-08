@@ -311,12 +311,13 @@ class JpaMappersTest {
                     "Admin role",
                     new HashSet<>()
             );
-            User domain = User.reconsitute(
+            User domain = User.reconstitute(
                     userId,
                     new Email("admin@example.com"),
                     Password.fromHash("$2a$10$adminHash"),
                     UserStatus.ACTIVE,
-                    role
+                    role,
+                    false
             );
             RoleJpaEntity roleEntity = createTestRoleEntity();
 
@@ -330,6 +331,7 @@ class JpaMappersTest {
             assertEquals("$2a$10$adminHash", entity.getPasswordHash());
             assertEquals(UserStatus.ACTIVE, entity.getStatus());
             assertEquals(roleEntity, entity.getRole());
+            assertFalse(entity.isTwoFactorEnabled());
         }
 
         @Test
@@ -382,12 +384,13 @@ class JpaMappersTest {
         @DisplayName("Should preserve email normalization during mapping")
         void shouldPreserveEmailNormalization_duringMapping() {
             // Given
-            User domain = User.reconsitute(
+            User domain = User.reconstitute(
                     UUID.randomUUID(),
                     new Email("User@Example.COM"),
                     Password.fromHash("$2a$10$hash"),
                     UserStatus.ACTIVE,
-                    Role.reconstitute(UUID.randomUUID(), RoleName.CUSTOMER, "Customer", new HashSet<>())
+                    Role.reconstitute(UUID.randomUUID(), RoleName.CUSTOMER, "Customer", new HashSet<>()),
+                    false
             );
             RoleJpaEntity roleEntity = createTestRoleEntity();
 

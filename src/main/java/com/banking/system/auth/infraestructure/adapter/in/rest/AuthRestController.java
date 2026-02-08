@@ -4,8 +4,10 @@ import com.banking.system.auth.application.dto.command.ResendVerificationCommand
 import com.banking.system.auth.application.dto.command.VerifyEmailCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
 import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.dto.result.TwoFactorStatusResult;
 import com.banking.system.auth.application.usecase.*;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.*;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.response.TwoFactorStatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,6 +36,9 @@ public class AuthRestController {
     private final ChangePasswordUseCase changePasswordUseCase;
     private final VerifyEmailUseCase verifyEmailUseCase;
     private final ResendVerificationEmailUseCase resendVerificationEmailUseCase;
+    private final VerifyTwoFactorUseCase verifyTwoFactorUseCase;
+    private final ToggleTwoFactorUseCase toggleTwoFactorUseCase;
+    private final GetTwoFactorStatusUseCase getTwoFactorStatusUseCase;
 
     @Operation(
             summary = "Register new user",
@@ -117,5 +122,60 @@ public class AuthRestController {
             @RequestBody @Valid ChangeUserPasswordRequest request) {
         changePasswordUseCase.changePassword(userId, request.toCommand());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Verify two-factor authentication code",
+            description = "Verifies the 2FA code and returns JWT token on success. Use the session token received from login response."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "2FA verification successful, JWT token returned"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired code"),
+            @ApiResponse(responseCode = "422", description = "Maximum verification attempts exceeded")
+    })
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<LoginResult> verifyTwoFactor(@RequestBody @Valid VerifyTwoFactorRequest request) {
+        var result = verifyTwoFactorUseCase.verify(request.toCommand());
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "Toggle two-factor authentication",
+            description = "Enables or disables two-factor authentication for the authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "2FA status updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data (validation failed)"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "422", description = "Cannot enable 2FA for inactive users")
+    })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/2fa/toggle")
+    public ResponseEntity<TwoFactorStatusResponse> toggleTwoFactor(
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId,
+            @RequestBody @Valid ToggleTwoFactorRequest request) {
+        TwoFactorStatusResult result = toggleTwoFactorUseCase.toggle(userId, request.toCommand());
+        return ResponseEntity.ok(new TwoFactorStatusResponse(result.enabled()));
+    }
+
+    @Operation(
+            summary = "Get two-factor authentication status",
+            description = "Returns whether 2FA is enabled for the authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "2FA status returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired JWT token"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/2fa/status")
+    public ResponseEntity<TwoFactorStatusResponse> getTwoFactorStatus(
+            @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
+        TwoFactorStatusResult result = getTwoFactorStatusUseCase.getStatus(userId);
+        return ResponseEntity.ok(new TwoFactorStatusResponse(result.enabled()));
     }
 }

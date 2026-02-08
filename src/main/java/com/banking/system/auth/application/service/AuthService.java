@@ -5,6 +5,7 @@ import com.banking.system.auth.application.dto.command.LoginCommand;
 import com.banking.system.auth.application.dto.command.RegisterCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
 import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.dto.result.TwoFactorRequiredResult;
 import com.banking.system.auth.application.dto.result.UserResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
 import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
@@ -14,8 +15,8 @@ import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.*;
 import com.banking.system.auth.domain.model.*;
 import com.banking.system.auth.domain.port.out.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +24,6 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthService implements
         RegisterUseCase,
         LoginUseCase,
@@ -36,6 +36,24 @@ public class AuthService implements
     private final PasswordHasher passwordHasher;
     private final TokenGenerator tokenGenerator;
     private final VerificationTokenRepositoryPort verificationTokenRepository;
+    private final TwoFactorService twoFactorService;
+
+    public AuthService(
+            UserRepositoryPort userRepository,
+            RoleRepositoryPort roleRepository,
+            UserEventPublisher userEventPublisher,
+            PasswordHasher passwordHasher,
+            TokenGenerator tokenGenerator,
+            VerificationTokenRepositoryPort verificationTokenRepository,
+            @Lazy TwoFactorService twoFactorService) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.userEventPublisher = userEventPublisher;
+        this.passwordHasher = passwordHasher;
+        this.tokenGenerator = tokenGenerator;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.twoFactorService = twoFactorService;
+    }
 
     @Override
     @Transactional
@@ -53,6 +71,17 @@ public class AuthService implements
         if (user.getStatus() == UserStatus.PENDING_VERIFICATION)
             throw new LoginAuthenticationAccessException("Please verify your email before logging in");
 
+        // Check if 2FA is enabled
+        if (user.isTwoFactorEnabled()) {
+            log.info("2FA is enabled for user: {}. Generating 2FA code.", user.getId());
+            TwoFactorRequiredResult twoFactorData = twoFactorService.createTwoFactorCode(user);
+            return LoginResult.withTwoFactorRequired(
+                    user.getId(),
+                    user.getEmail().value(),
+                    twoFactorData
+            );
+        }
+
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
                 user.getId(),
@@ -61,7 +90,7 @@ public class AuthService implements
                 role.getPermissionCodes()
         );
 
-        return new LoginResult(
+        return LoginResult.withToken(
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),

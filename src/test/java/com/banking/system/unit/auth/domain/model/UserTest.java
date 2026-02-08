@@ -117,7 +117,7 @@ class UserTest {
             UserStatus status = UserStatus.ACTIVE;
             Role role = createDefaultCustomerRole();
 
-            User user = User.reconsitute(id, email, password, status, role);
+            User user = User.reconstitute(id, email, password, status, role, false);
 
             assertNotNull(user);
             assertEquals(id, user.getId());
@@ -135,7 +135,7 @@ class UserTest {
             Password password = createTestPasswordHash();
             Role role = createDefaultCustomerRole();
 
-            User user = User.reconsitute(id, email, password, UserStatus.PENDING_VERIFICATION, role);
+            User user = User.reconstitute(id, email, password, UserStatus.PENDING_VERIFICATION, role, false);
 
             assertEquals(UserStatus.PENDING_VERIFICATION, user.getStatus());
         }
@@ -148,7 +148,7 @@ class UserTest {
             Password password = createTestPasswordHash();
             Role role = createDefaultCustomerRole();
 
-            User user = User.reconsitute(id, email, password, UserStatus.BLOCKED, role);
+            User user = User.reconstitute(id, email, password, UserStatus.BLOCKED, role, false);
 
             assertEquals(UserStatus.BLOCKED, user.getStatus());
         }
@@ -161,7 +161,7 @@ class UserTest {
             Role role = createDefaultCustomerRole();
 
             assertThrows(NullPointerException.class, () ->
-                    User.reconsitute(id, null, password, UserStatus.ACTIVE, role)
+                    User.reconstitute(id, null, password, UserStatus.ACTIVE, role, false)
             );
         }
     }
@@ -242,12 +242,13 @@ class UserTest {
         @Test
         @DisplayName("Should throw exception when user is already ACTIVE")
         void shouldThrowException_whenUserIsAlreadyActive() {
-            User user = User.reconsitute(
+            User user = User.reconstitute(
                     UUID.randomUUID(),
                     createTestEmail(),
                     createTestPasswordHash(),
                     UserStatus.ACTIVE,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
@@ -260,12 +261,13 @@ class UserTest {
         @Test
         @DisplayName("Should throw exception when user is BLOCKED")
         void shouldThrowException_whenUserIsBlocked() {
-            User user = User.reconsitute(
+            User user = User.reconstitute(
                     UUID.randomUUID(),
                     createTestEmail(),
                     createTestPasswordHash(),
                     UserStatus.BLOCKED,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
@@ -283,12 +285,13 @@ class UserTest {
         @Test
         @DisplayName("Should block user when status is ACTIVE")
         void shouldBlockUser_whenStatusIsActive() {
-            User user = User.reconsitute(
+            User user = User.reconstitute(
                     UUID.randomUUID(),
                     createTestEmail(),
                     createTestPasswordHash(),
                     UserStatus.ACTIVE,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
 
             user.block();
@@ -315,12 +318,13 @@ class UserTest {
         @Test
         @DisplayName("Should throw exception when user is already BLOCKED")
         void shouldThrowException_whenUserIsAlreadyBlocked() {
-            User user = User.reconsitute(
+            User user = User.reconstitute(
                     UUID.randomUUID(),
                     createTestEmail(),
                     createTestPasswordHash(),
                     UserStatus.BLOCKED,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
@@ -368,23 +372,25 @@ class UserTest {
             assertDoesNotThrow(() -> pendingUser.changePassword(newPassword1));
 
             // ACTIVE
-            User activeUser = User.reconsitute(
+            User activeUser = User.reconstitute(
                     UUID.randomUUID(),
                     new Email("active@test.com"),
                     createTestPasswordHash(),
                     UserStatus.ACTIVE,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
             Password newPassword2 = Password.fromHash("$2a$10$NewHash2234567890123456789012345678901234567890");
             assertDoesNotThrow(() -> activeUser.changePassword(newPassword2));
 
             // BLOCKED
-            User blockedUser = User.reconsitute(
+            User blockedUser = User.reconstitute(
                     UUID.randomUUID(),
                     new Email("blocked@test.com"),
                     createTestPasswordHash(),
                     UserStatus.BLOCKED,
-                    createDefaultCustomerRole()
+                    createDefaultCustomerRole(),
+                    false
             );
             Password newPassword3 = Password.fromHash("$2a$10$NewHash3234567890123456789012345678901234567890");
             assertDoesNotThrow(() -> blockedUser.changePassword(newPassword3));

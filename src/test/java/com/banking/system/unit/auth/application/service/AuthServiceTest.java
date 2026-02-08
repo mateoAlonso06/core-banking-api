@@ -54,12 +54,13 @@ class AuthServiceTest {
     // Helper methods
     private User createTestUser(UserStatus status) {
         Role role = createTestRole();
-        return User.reconsitute(
+        return User.reconstitute(
                 UUID.randomUUID(),
                 new Email("test@example.com"),
                 Password.fromHash("$2a$10$hashedPassword"),
                 status,
-                role
+                role,
+                false
         );
     }
 
@@ -237,12 +238,13 @@ class AuthServiceTest {
             when(passwordHasher.hash(plainPassword)).thenReturn(hashedPassword);
             when(roleRepository.getDefaultRole()).thenReturn(defaultRole);
 
-            User savedUser = User.reconsitute(
+            User savedUser = User.reconstitute(
                     UUID.randomUUID(),
                     new Email(emailStr),
                     Password.fromHash(hashedPassword),
                     UserStatus.PENDING_VERIFICATION,
-                    defaultRole
+                    defaultRole,
+                    false
             );
             when(userRepository.save(any(User.class))).thenReturn(savedUser);
             when(verificationTokenRepository.save(any(VerificationToken.class)))
@@ -328,12 +330,13 @@ class AuthServiceTest {
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
             when(userRepository.save(userCaptor.capture())).thenAnswer(invocation -> {
                 User user = invocation.getArgument(0);
-                return User.reconsitute(
+                return User.reconstitute(
                         UUID.randomUUID(),
                         user.getEmail(),
                         user.getPassword(),
                         user.getStatus(),
-                        user.getRole()
+                        user.getRole(),
+                        user.isTwoFactorEnabled()
                 );
             });
             when(verificationTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -401,12 +404,13 @@ class AuthServiceTest {
             when(passwordHasher.hash(anyString())).thenReturn("$2a$10$hash");
             when(roleRepository.getDefaultRole()).thenReturn(createTestRole());
 
-            User savedUser = User.reconsitute(
+            User savedUser = User.reconstitute(
                     UUID.randomUUID(),
                     new Email(emailStr),
                     Password.fromHash("$2a$10$hash"),
                     UserStatus.PENDING_VERIFICATION,
-                    createTestRole()
+                    createTestRole(),
+                    false
             );
             when(userRepository.save(any(User.class))).thenReturn(savedUser);
             when(verificationTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

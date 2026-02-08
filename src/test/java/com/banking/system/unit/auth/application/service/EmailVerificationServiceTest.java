@@ -44,12 +44,13 @@ class EmailVerificationServiceTest {
     // Helper methods
     private User createTestUser(UUID userId, UserStatus status, String email) {
         Role role = createTestRole();
-        return User.reconsitute(
+        return User.reconstitute(
                 userId,
                 new Email(email),
                 Password.fromHash("$2a$10$hashedPassword"),
                 status,
-                role
+                role,
+                false
         );
     }
 
