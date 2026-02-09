@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Include Spring Boot defaults -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Property for correlation ID pattern -->
+    <property name="CORRELATION_PATTERN" value="[%X{correlationId:-NO-CORRELATION-ID}]"/>
+
+    <!-- Development profile (default) -->
+    <springProfile name="dev,default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} ${CORRELATION_PATTERN} %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- Show SQL queries in dev -->
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    </springProfile>
+
+    <!-- Production profile -->
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <!-- JSON format for production (easier to parse by log aggregators like ELK, CloudWatch) -->
+                <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","correlationId":"%X{correlationId:-NO-ID}","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- Application logs at INFO level in production -->
+        <logger name="com.banking.system" level="INFO"/>
+
+        <!-- Hide SQL queries in production -->
+        <logger name="org.hibernate.SQL" level="WARN"/>
+    </springProfile>
+</configuration>
