@@ -6,8 +6,23 @@ spring:
     username: ${AWS_DB_USERNAME}
     password: ${spring.datasource.password}
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 8
+      minimum-idle: 3
+      # Timeouts
+      connection-timeout: 20000       # 20s - Max time for get a connection
+      idle-timeout: 300000            # 5min - Close inactive connections
+      max-lifetime: 1800000           # 30min - Renew connections periodically
+
+      # Monitoring and detection problems
+      leak-detection-threshold: 30000 # 30s - Detect connections that are not free
+      connection-test-query: SELECT 1 # Validate connections before use
+      pool-name: BankingSystemPool
+
+      # Optimizations for PostgreSQL
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
   data:
     redis:
       host: ${REDIS_HOST}
@@ -17,12 +32,20 @@ spring:
     show-sql: false
     hibernate:
       ddl-auto: validate
-
+  servlet:
+    multipart:
+      enabled: false
+  http:
+    codecs:
+      max-in-memory-size: 1MB
   flyway:
     enabled: true
     baseline-on-migrate: true
     clean-disabled: true
 
+server:
+  tomcat:
+    max-http-form-post-size: 1048576
 logging:
   level:
     root: WARN
