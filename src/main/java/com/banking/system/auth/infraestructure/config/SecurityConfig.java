@@ -2,6 +2,7 @@ package com.banking.system.auth.infraestructure.config;
 
 import com.banking.system.auth.infraestructure.adapter.out.filter.JwtAuthenticationFilter;
 import com.banking.system.auth.infraestructure.adapter.out.filter.RateLimitFilter;
+import com.banking.system.common.infraestructure.filter.CorrelationIdFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,7 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
+    private final CorrelationIdFilter correlationIdFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<RateLimitFilter> rateLimitFilterProvider;
 
@@ -71,6 +73,8 @@ public class SecurityConfig {
         rateLimitFilterProvider.ifAvailable(rateLimitFilter -> httpSecurity.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class));
 
         return httpSecurity
+                // CorrelationId filter FIRST - ensures all subsequent filters and logs have the correlation ID
+                .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -85,10 +89,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        // For: JWT; JSON/XML; Content negotiation; AJAX requests
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Request-With"));
+        // For: JWT; JSON/XML; Content negotiation; AJAX requests; Request tracing
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "X-Correlation-ID"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization"));
+        // Expose headers that client-side JavaScript can read from responses
+        configuration.setExposedHeaders(List.of("Authorization", "X-Correlation-ID"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

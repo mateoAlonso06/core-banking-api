@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -17,7 +18,6 @@ import java.util.UUID;
  * Filter that ensures every request has a correlation ID for tracking across logs.
  * The correlation ID can be provided by the client via X-Correlation-ID header,
  * or will be generated automatically.
- *
  * This ID is added to:
  * - MDC (Mapped Diagnostic Context) for automatic inclusion in all logs
  * - Response headers so clients can reference it when reporting issues
@@ -31,8 +31,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                     HttpServletResponse response,
-                                     FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         // Get correlation ID from header or generate a new one
         String correlationId = request.getHeader(CORRELATION_ID_HEADER);
