@@ -2,11 +2,13 @@ package com.banking.system.common.infraestructure.exception;
 
 import com.banking.system.auth.domain.exception.UserIsLockedException;
 import com.banking.system.common.domain.exception.*;
+import com.banking.system.notification.domain.exception.EmailRateLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +43,7 @@ public class GlobalExceptionHandler {
     private static final String MSG_INVALID_STATE = "Operation not allowed in current state";
     private static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. Please contact support with the correlation ID";
     private static final String MSG_ACCOUNT_LOCKED = "Account is temporarily locked";
+    private static final String MSG_RATE_LIMIT_EXCEEDED = "Too many requests. Please try again later";
 
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
@@ -173,7 +176,7 @@ public class GlobalExceptionHandler {
             List<String> fieldNames = ex.getBindingResult()
                     .getFieldErrors()
                     .stream()
-                    .map(error -> error.getField())
+                    .map(FieldError::getField)
                     .distinct()
                     .toList();
             String message = MSG_VALIDATION_FAILED + ": " + String.join(", ", fieldNames);
@@ -249,6 +252,22 @@ public class GlobalExceptionHandler {
 
         String message = sanitizeMessage(ex.getMessage(), MSG_ACCOUNT_LOCKED);
         return buildResponse(HttpStatus.LOCKED, "Locked", message);
+    }
+
+    /**
+     * Handles email rate limit exceeded exceptions.
+     * Prevents email spam abuse by limiting email sending frequency per user.
+     * Returns 429 Too Many Requests (standard HTTP status for rate limiting).
+     * Logs: Email address and timestamp for abuse monitoring
+     * Response: Generic message to inform user about rate limit
+     */
+    @ExceptionHandler(EmailRateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailRateLimitExceeded(EmailRateLimitExceededException ex) {
+        log.warn("Email rate limit exceeded [correlationId={}]: {}",
+                MDC.get("correlationId"), ex.getMessage());
+
+        String message = sanitizeMessage(ex.getMessage(), MSG_RATE_LIMIT_EXCEEDED);
+        return buildResponse(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", message);
     }
 
     /**

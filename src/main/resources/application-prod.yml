@@ -34,10 +34,9 @@ spring:
       ddl-auto: validate
   servlet:
     multipart:
-      enabled: false
-  http:
-    codecs:
-      max-in-memory-size: 1MB
+      enabled: false                # Disables file uploads - not needed for banking API
+      max-request-size: 1MB         # Fallback limit if multipart ever enabled
+      max-file-size: 1MB
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -45,7 +44,11 @@ spring:
 
 server:
   tomcat:
-    max-http-form-post-size: 1048576
+    max-http-form-post-size: 1MB      # Limits form POST size (prevents large form attacks)
+    max-swallow-size: 2MB             # Max bytes Tomcat swallows for aborted requests
+    max-http-response-header-size: 8KB
+    connection-timeout: 20000         # 20s - Drops slow/idle connections
+  max-http-request-header-size: 8KB   # Prevents header overflow attacks
 logging:
   level:
     root: WARN
@@ -54,5 +57,5 @@ logging:
 management:
   endpoint:
     health:
-      show-details: never
-      show-components: never
+      show-details: never             # Hides internal health info from external users
+      show-components: never          # Prevents component enumeration

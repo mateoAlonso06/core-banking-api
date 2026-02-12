@@ -28,8 +28,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String clientIp = this.getClientIp(request);
+            String requestPath = request.getRequestURI();
 
-            Bucket tokenBucket = rateLimitingService.resolveBucket(clientIp);
+            // Select appropriate rate limit based on endpoint type
+            Bucket tokenBucket = resolveBucketForEndpoint(clientIp, requestPath);
 
             var probe = tokenBucket.tryConsumeAndReturnRemaining(1);
 
@@ -57,6 +59,60 @@ public class RateLimitFilter extends OncePerRequestFilter {
             logger.error("Rate limiting failed, allowing request: " + ex.getMessage());
             filterChain.doFilter(request, response);
         }
+    }
+
+    /**
+     * Resolves the appropriate rate limit bucket based on endpoint type.
+     * Authentication endpoints get stricter limits to prevent brute force.
+     * Authenticated API endpoints get generous limits for legitimate users.
+     * Public endpoints get moderate limits.
+     *
+     * @param clientIp    Client IP address (unique key for rate limiting)
+     * @param requestPath Request URI path
+     * @return Bucket configured with appropriate rate limit
+     */
+    private Bucket resolveBucketForEndpoint(String clientIp, String requestPath) {
+        // Strict limits for authentication endpoints (prevent brute force)
+        if (isAuthenticationEndpoint(requestPath)) {
+            return rateLimitingService.resolveBucketForLogin(clientIp);
+        }
+
+        // Moderate limits for public endpoints
+        if (isPublicEndpoint(requestPath)) {
+            return rateLimitingService.resolveBucketForPublic(clientIp);
+        }
+
+        // Generous limits for authenticated API endpoints (normal usage)
+        return rateLimitingService.resolveBucketForAuthenticatedApi(clientIp);
+    }
+
+    /**
+     * Checks if the endpoint is authentication-related (login, register, verification, 2FA).
+     * These endpoints need strict rate limiting to prevent brute force attacks.
+     *
+     * @param path Request URI path
+     * @return true if authentication endpoint
+     */
+    private boolean isAuthenticationEndpoint(String path) {
+        return path.startsWith("/api/v1/auth/login") ||
+                path.startsWith("/api/v1/auth/register") ||
+                path.startsWith("/api/v1/auth/verify-email") ||
+                path.startsWith("/api/v1/auth/resend-verification") ||
+                path.startsWith("/api/v1/auth/2fa/verify");
+    }
+
+    /**
+     * Checks if the endpoint is public (health checks, documentation, etc.).
+     * These endpoints need moderate rate limiting.
+     *
+     * @param path Request URI path
+     * @return true if public endpoint
+     */
+    private boolean isPublicEndpoint(String path) {
+        return path.startsWith("/actuator/health") ||
+                path.startsWith("/actuator/info") ||
+                path.startsWith("/api-docs") ||
+                path.startsWith("/swagger-ui");
     }
 
     private String getClientIp(HttpServletRequest request) {
