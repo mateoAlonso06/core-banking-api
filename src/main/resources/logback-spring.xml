@@ -6,16 +6,47 @@
     <!-- Property for correlation ID pattern -->
     <property name="CORRELATION_PATTERN" value="[%X{correlationId:-NO-CORRELATION-ID}]"/>
 
+    <!-- Loki URL (from environment variable) -->
+    <springProperty scope="context" name="LOKI_URL" source="loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="core-bank"/>
+
     <!-- Development profile (default) -->
     <springProfile name="dev,default">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} ${CORRELATION_PATTERN} %-5level %logger{36} - %msg%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} ${CORRELATION_PATTERN} [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n</pattern>
             </encoder>
+        </appender>
+
+        <!-- Loki appender for dev -->
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${LOKI_URL}</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,profile=dev</pattern>
+                </label>
+                <message>
+                    <pattern>
+                        {
+                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+                        "level": "%level",
+                        "thread": "%thread",
+                        "logger": "%logger{36}",
+                        "message": "%msg",
+                        "correlationId": "%X{correlationId:-NO-ID}",
+                        "traceId": "%X{traceId:-}",
+                        "spanId": "%X{spanId:-}"
+                        }
+                    </pattern>
+                </message>
+            </format>
         </appender>
 
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
         </root>
 
         <!-- Show SQL queries in dev -->
@@ -27,13 +58,40 @@
     <springProfile name="prod">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <!-- JSON format for production (easier to parse by log aggregators like ELK, CloudWatch) -->
-                <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","correlationId":"%X{correlationId:-NO-ID}","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n</pattern>
+                <!-- JSON format for production -->
+                <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","correlationId":"%X{correlationId:-NO-ID}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n</pattern>
             </encoder>
+        </appender>
+
+        <!-- Loki appender for production -->
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${LOKI_URL}</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,profile=prod</pattern>
+                </label>
+                <message>
+                    <pattern>
+                        {
+                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+                        "level": "%level",
+                        "thread": "%thread",
+                        "logger": "%logger{36}",
+                        "message": "%msg",
+                        "correlationId": "%X{correlationId:-NO-ID}",
+                        "traceId": "%X{traceId:-}",
+                        "spanId": "%X{spanId:-}"
+                        }
+                    </pattern>
+                </message>
+            </format>
         </appender>
 
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
         </root>
 
         <!-- Application logs at INFO level in production -->

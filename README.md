@@ -76,7 +76,7 @@ Key design decisions:
 ## Modules
 
 ### Auth
-User registration, login, JWT token management, email verification, password changes. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions.
+User registration, login, JWT token management, email verification, password changes, and two-factor authentication (2FA) via email. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions.
 
 ### Customer
 Customer profiles linked 1:1 to users. Manages KYC (Know Your Customer) approval workflows and risk level assessment (`LOW`, `MEDIUM`, `HIGH`). Name changes automatically reset KYC status to `PENDING`.
@@ -95,15 +95,18 @@ Audit trail infrastructure (database table in place, module scaffolded).
 
 ## API Endpoints
 
-### Authentication — `POST /api/v1/auth/*` (public)
+### Authentication — `/api/v1/auth/*`
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Authenticate and receive JWT |
-| POST | `/auth/verify-email` | Verify email with token |
-| POST | `/auth/resend-verification` | Resend verification email |
-| PUT | `/auth/change-password` | Change password (authenticated) |
+| Method | Path | Description | Auth |
+|---|---|---|---|
+| POST | `/auth/register` | Register a new user | Public |
+| POST | `/auth/login` | Authenticate and receive JWT (or 2FA session token) | Public |
+| POST | `/auth/verify-email` | Verify email with token | Public |
+| POST | `/auth/resend-verification` | Resend verification email | Public |
+| PUT | `/auth/change-password` | Change password | Authenticated |
+| POST | `/auth/2fa/verify` | Verify 2FA code and receive JWT | Public |
+| PUT | `/auth/2fa/toggle` | Enable or disable 2FA | Authenticated |
+| GET | `/auth/2fa/status` | Get current 2FA status | Authenticated |
 
 ### Customers — `/api/v1/customers` (authenticated)
 
