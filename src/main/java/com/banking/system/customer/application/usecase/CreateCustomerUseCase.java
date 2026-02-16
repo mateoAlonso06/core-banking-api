@@ -4,5 +4,5 @@ import com.banking.system.customer.application.dto.command.CreateCustomerCommand
 import com.banking.system.customer.application.dto.result.CustomerResult;
 
 public interface CreateCustomerUseCase {
-    CustomerResult createCustomer(CreateCustomerCommand command);
+    void createCustomer(CreateCustomerCommand command);
 }

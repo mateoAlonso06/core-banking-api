@@ -1,18 +1,9 @@
-# STAGE 1
-FROM eclipse-temurin:21-jdk AS builder
-
-WORKDIR /app
-
-COPY . .
-
-RUN ./mvnw clean package -DskipTests
-
-# STAGE 2
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/target/*.jar app.jar
+# Copy pre-built JAR (run 'mvn clean package -DskipTests' before docker build)
+COPY target/*.jar app.jar
 
 EXPOSE 8080
 

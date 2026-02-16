@@ -24,7 +24,7 @@ public class UserJpaMapper {
     /**
      * Converts a JPA entity from the persistence layer to a domain entity.
      * <p>
-     * Uses {@link User#reconsitute} factory method to rebuild the domain aggregate
+     * Uses {@link User reconsitute} factory method to rebuild the domain aggregate
      * with all its invariants. Wraps primitive String values into Value Objects
      * (Email, Password) during the conversion. The password is reconstituted from
      * its hashed form using {@link Password#fromHash}.
@@ -38,12 +38,13 @@ public class UserJpaMapper {
 
         Role role = RoleJpaMapper.toDomain(entity.getRole());
 
-        return User.reconsitute(
+        return User.reconstitute(
                 entity.getId(),
                 new Email(entity.getEmail()),
                 Password.fromHash(entity.getPasswordHash()),
                 entity.getStatus(),
-                role
+                role,
+                entity.isTwoFactorEnabled()
         );
     }
 
@@ -68,6 +69,7 @@ public class UserJpaMapper {
         entity.setPasswordHash(user.getPassword().value());
         entity.setStatus(user.getStatus());
         entity.setRole(roleEntity);
+        entity.setTwoFactorEnabled(user.isTwoFactorEnabled());
 
         return entity;
     }

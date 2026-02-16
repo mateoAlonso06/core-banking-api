@@ -1,5 +1,6 @@
 package com.banking.system.notification.infraestructure.adapter.out;
 
+import com.banking.system.notification.domain.exception.EmailDeliveryException;
 import com.banking.system.notification.domain.model.EmailNotification;
 import com.banking.system.notification.domain.port.out.EmailSenderPort;
 import com.banking.system.notification.domain.port.out.TemplateRenderedPort;
@@ -38,7 +39,7 @@ public class EmailAdapter implements EmailSenderPort {
             log.info("Email sent successfully to {}", notification.to());
         } catch (MessagingException e) {
             log.error("Error sending email to: {}", notification.to(), e);
-            throw new RuntimeException("Failed to send email", e);
+            throw new EmailDeliveryException("Failed to send email to " + notification.to(), e);
         }
     }
 }

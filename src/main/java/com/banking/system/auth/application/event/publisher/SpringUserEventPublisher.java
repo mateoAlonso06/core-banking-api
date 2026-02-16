@@ -2,6 +2,7 @@ package com.banking.system.auth.application.event.publisher;
 
 import com.banking.system.auth.application.dto.command.RegisterCommand;
 import com.banking.system.auth.application.event.EmailVerificationRequestedEvent;
+import com.banking.system.auth.application.event.TwoFactorCodeRequestedEvent;
 import com.banking.system.auth.application.event.UserRegisteredEvent;
 import com.banking.system.auth.domain.model.User;
 
@@ -38,6 +39,13 @@ public class SpringUserEventPublisher implements UserEventPublisher {
     public void publishEmailVerificationRequestedEvent(UUID userId, String email, String token, String firstName) {
         applicationEventPublisher.publishEvent(
                 new EmailVerificationRequestedEvent(userId, email, token, firstName)
+        );
+    }
+
+    @Override
+    public void publishTwoFactorCodeRequestedEvent(UUID userId, String email, String code, String firstName) {
+        applicationEventPublisher.publishEvent(
+                new TwoFactorCodeRequestedEvent(userId, email, code, firstName)
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.banking.system.transaction.infraestructure.adapter.in.rest.dto.request;
 
+import com.banking.system.common.infraestructure.utils.SanitizeHtml;
 import com.banking.system.transaction.application.dto.command.TransferMoneyCommand;
 import com.banking.system.transaction.domain.model.TransferCategory;
 import jakarta.validation.constraints.*;
@@ -12,9 +13,11 @@ public record TransferMoneyRequest(
         UUID fromAccountId,
 
         @Pattern(regexp = "^[a-z0-9._-]{6,20}$", message = "Alias must be 6-20 characters long and contain only lowercase letters, digits, dots, hyphens, or underscores")
+        @SanitizeHtml
         String toAlias,
 
         @Pattern(regexp = "^\\d{22}$", message = "Account number must be exactly 22 digits")
+        @SanitizeHtml
         String toAccountNumber,
 
         @Positive
@@ -25,6 +28,7 @@ public record TransferMoneyRequest(
 
         @NotBlank(message = "Currency is required")
         @Size(min = 3, max = 3, message = "Currency must be a 3-letter ISO code (e.g., USD, EUR)")
+        @SanitizeHtml
         String currency,
 
         @Positive
@@ -38,6 +42,7 @@ public record TransferMoneyRequest(
         TransferCategory category,
 
         @Size(max = 255, message = "Description cannot exceed 255 characters")
+        @SanitizeHtml
         String description,
 
         @NotNull(message = "Idempotency key is required")

@@ -2,9 +2,6 @@ spring:
   application:
     name: core-bank
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -52,13 +49,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers,retries
       base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
       show-components: when-authorized
   health:
+    circuitbreakers:
+      enabled: true
     db:
       enabled: true
     diskspace:
@@ -69,11 +68,32 @@ management:
   metrics:
     tags:
       application: core-bank
+  tracing:
+    sampling:
+      probability: 1.0  # 100% sampling for dev, adjust in prod
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
+loki:
+  url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
 logging:
   level:
     root: INFO
-    com.banking.system: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    com.banking.system: INFO
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} %clr(-){faint} %msg%n"
+resilience4j:
+  retry:
+    instances:
+      emailService:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - com.banking.system.notification.domain.exception.EmailDeliveryException
+  circuitbreaker:
+    instances:
+      emailService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3

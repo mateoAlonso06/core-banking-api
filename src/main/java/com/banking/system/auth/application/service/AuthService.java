@@ -5,29 +5,18 @@ import com.banking.system.auth.application.dto.command.LoginCommand;
 import com.banking.system.auth.application.dto.command.RegisterCommand;
 import com.banking.system.auth.application.dto.result.LoginResult;
 import com.banking.system.auth.application.dto.result.RegisterResult;
+import com.banking.system.auth.application.dto.result.TwoFactorRequiredResult;
 import com.banking.system.auth.application.dto.result.UserResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
 import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
 import com.banking.system.auth.application.usecase.FindUserByIdUseCase;
 import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
-import com.banking.system.auth.domain.exception.InvalidCredentalsException;
-import com.banking.system.auth.domain.exception.UserAlreadyExistsException;
-import com.banking.system.auth.domain.exception.UserNotFoundException;
-import com.banking.system.auth.domain.model.Email;
-import com.banking.system.auth.domain.model.Password;
-import com.banking.system.auth.domain.model.Role;
-import com.banking.system.auth.domain.model.User;
-import com.banking.system.auth.domain.port.out.PasswordHasher;
-import com.banking.system.auth.domain.port.out.RoleRepositoryPort;
-import com.banking.system.auth.domain.port.out.TokenGenerator;
-import com.banking.system.auth.domain.port.out.UserRepositoryPort;
-import com.banking.system.auth.domain.port.out.VerificationTokenRepositoryPort;
-import com.banking.system.auth.domain.model.VerificationToken;
-import com.banking.system.auth.domain.model.UserStatus;
-import com.banking.system.auth.domain.exception.UserNotVerifiedException;
-import lombok.RequiredArgsConstructor;
+import com.banking.system.auth.domain.exception.*;
+import com.banking.system.auth.domain.model.*;
+import com.banking.system.auth.domain.port.out.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +24,6 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthService implements
         RegisterUseCase,
         LoginUseCase,
@@ -48,6 +36,24 @@ public class AuthService implements
     private final PasswordHasher passwordHasher;
     private final TokenGenerator tokenGenerator;
     private final VerificationTokenRepositoryPort verificationTokenRepository;
+    private final TwoFactorService twoFactorService;
+
+    public AuthService(
+            UserRepositoryPort userRepository,
+            RoleRepositoryPort roleRepository,
+            UserEventPublisher userEventPublisher,
+            PasswordHasher passwordHasher,
+            TokenGenerator tokenGenerator,
+            VerificationTokenRepositoryPort verificationTokenRepository,
+            @Lazy TwoFactorService twoFactorService) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.userEventPublisher = userEventPublisher;
+        this.passwordHasher = passwordHasher;
+        this.tokenGenerator = tokenGenerator;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.twoFactorService = twoFactorService;
+    }
 
     @Override
     @Transactional
@@ -55,11 +61,26 @@ public class AuthService implements
         User user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new UserNotFoundException("Invalid credentials"));
 
+        // for security verify password is the first check
         if (!passwordHasher.verify(command.password(), user.getPassword().value()))
-            throw new InvalidCredentalsException("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
+
+        if (user.getStatus() == UserStatus.BLOCKED)
+            throw new UserIsLockedException("User account is blocked");
 
         if (user.getStatus() == UserStatus.PENDING_VERIFICATION)
-            throw new UserNotVerifiedException("Please verify your email before logging in");
+            throw new LoginAuthenticationAccessException("Please verify your email before logging in");
+
+        // Check if 2FA is enabled
+        if (user.isTwoFactorEnabled()) {
+            log.info("2FA is enabled for user: {}. Generating 2FA code.", user.getId());
+            TwoFactorRequiredResult twoFactorData = twoFactorService.createTwoFactorCode(user);
+            return LoginResult.withTwoFactorRequired(
+                    user.getId(),
+                    user.getEmail().value(),
+                    twoFactorData
+            );
+        }
 
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
@@ -69,7 +90,7 @@ public class AuthService implements
                 role.getPermissionCodes()
         );
 
-        return new LoginResult(
+        return LoginResult.withToken(
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),
@@ -131,7 +152,7 @@ public class AuthService implements
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!passwordHasher.verify(command.oldPassword(), user.getPassword().value())) {
-            throw new InvalidCredentalsException("Old password is incorrect");
+            throw new InvalidCredentialsException("Old password is incorrect");
         }
 
         Password hashedNewPassword = Password.fromHash(passwordHasher.hash(command.newPassword()));

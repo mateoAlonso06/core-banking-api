@@ -23,6 +23,7 @@ A backend core banking system built with **Java 21** and **Spring Boot 3.5**, fo
 | Framework | Spring Boot 3.5.9 |
 | Security | Spring Security 6, JWT (java-jwt 4.5.0), BCrypt |
 | Database | PostgreSQL 16 |
+| Cache / Rate Limiting | Redis 7, Bucket4j, Lettuce |
 | ORM | Spring Data JPA / Hibernate |
 | Migrations | Flyway |
 | Mapping | MapStruct 1.6.3, Lombok |
@@ -70,11 +71,12 @@ Key design decisions:
 - **Domain Events** for cross-module communication (`UserRegisteredEvent` → auto-creates Customer, triggers verification email)
 - **Permission-based authorization** (not role-based) via `@PreAuthorize`
 - **Idempotency keys** on transfers to prevent duplicate processing
+- **Distributed rate limiting** via Redis + Bucket4j (token bucket algorithm) to protect API from abuse
 
 ## Modules
 
 ### Auth
-User registration, login, JWT token management, email verification, password changes. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions.
+User registration, login, JWT token management, email verification, password changes, and two-factor authentication (2FA) via email. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions.
 
 ### Customer
 Customer profiles linked 1:1 to users. Manages KYC (Know Your Customer) approval workflows and risk level assessment (`LOW`, `MEDIUM`, `HIGH`). Name changes automatically reset KYC status to `PENDING`.
@@ -93,15 +95,18 @@ Audit trail infrastructure (database table in place, module scaffolded).
 
 ## API Endpoints
 
-### Authentication — `POST /api/v1/auth/*` (public)
+### Authentication — `/api/v1/auth/*`
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Authenticate and receive JWT |
-| POST | `/auth/verify-email` | Verify email with token |
-| POST | `/auth/resend-verification` | Resend verification email |
-| PUT | `/auth/change-password` | Change password (authenticated) |
+| Method | Path | Description | Auth |
+|---|---|---|---|
+| POST | `/auth/register` | Register a new user | Public |
+| POST | `/auth/login` | Authenticate and receive JWT (or 2FA session token) | Public |
+| POST | `/auth/verify-email` | Verify email with token | Public |
+| POST | `/auth/resend-verification` | Resend verification email | Public |
+| PUT | `/auth/change-password` | Change password | Authenticated |
+| POST | `/auth/2fa/verify` | Verify 2FA code and receive JWT | Public |
+| PUT | `/auth/2fa/toggle` | Enable or disable 2FA | Authenticated |
+| GET | `/auth/2fa/status` | Get current 2FA status | Authenticated |
 
 ### Customers — `/api/v1/customers` (authenticated)
 
@@ -150,7 +155,7 @@ Full interactive documentation available at `/swagger-ui.html` when the applicat
 
 - Java 21
 - Maven 3.8+
-- Docker & Docker Compose (recommended) **or** PostgreSQL 16
+- Docker & Docker Compose (recommended) **or** PostgreSQL 16 + Redis 7
 
 ### Run with Docker Compose (recommended)
 
@@ -163,7 +168,7 @@ cd core-banking-system
 cp .env.example .env
 # Edit .env with your values (see Environment Variables section)
 
-# 3. Start all services
+# 3. Start all services (PostgreSQL, Redis, App)
 docker-compose up --build
 
 # The API will be available at http://localhost:8080
@@ -173,7 +178,7 @@ docker-compose up --build
 ### Run locally
 
 ```bash
-# 1. Start PostgreSQL (port 5432)
+# 1. Start PostgreSQL (port 5432) and Redis (port 6379)
 # 2. Create the database
 createdb core_banking_db
 
@@ -198,6 +203,9 @@ Copy `.env.example` to `.env` and configure:
 | `JWT_SECRET` | JWT signing key (min 32 chars) | `openssl rand -base64 32` |
 | `JWT_EXPIRATION_MS` | Token expiry in ms | `86400000` (24h) |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` |
+| `SPRING_DATA_REDIS_HOST` | Redis host (`redis` in Docker, `localhost` locally) | `localhost` |
+| `SPRING_DATA_REDIS_PORT` | Redis port | `6379` |
+| `SPRING_DATA_REDIS_PASSWORD` | Redis password (optional) | ` ` |
 | `MAIL_USERNAME` | Gmail address for SMTP | `your@gmail.com` |
 | `MAIL_PASSWORD` | Gmail app password | `your_app_password` |
 
@@ -207,17 +215,10 @@ Migrations are managed by Flyway and run automatically on startup. Files are loc
 
 | Migration | Description |
 |---|---|
-| V1 | Initial schema (users, customers, accounts, transactions, transfers, audit_logs) |
-| V2 | Remove cross-boundary foreign keys |
-| V3 | Add fee amount to transfers |
-| V4 | Convert account enums to varchar |
-| V5 | Create roles and permissions tables |
-| V6 | Seed default roles and permissions |
-| V7 | Migrate user role column to FK |
-| V8 | Add CUSTOMER_UPDATE permission |
-| V9 | Add email verification tokens table |
-| V10 | Add idempotency key to transactions |
-| V11 | Add category to transfers |
+| V1 | Consolidated initial schema (users, roles, permissions, customers, accounts, transactions, transfers, audit_logs, email_verification_tokens). Includes all structural changes from previous V1-V11 migrations. |
+| V2 | Seed initial data (default roles: CUSTOMER, ADMIN, BRANCH_MANAGER and their associated permissions) |
+
+The migrations have been consolidated for production deployment. Previous incremental migrations (V1-V11) are now unified into these two scripts.
 
 ## Testing
 
@@ -259,7 +260,7 @@ core-banking-system/
 │   │   │   └── common/            # Shared value objects & exceptions
 │   │   └── resources/
 │   │       ├── application.yml
-│   │       └── db/migration/      # Flyway SQL migrations (V1–V11)
+│   │       └── db/migration/      # Flyway SQL migrations (V1-V2)
 │   └── test/java/                 # Unit & integration tests
 ├── docs/                          # ADRs, DB models, domain invariants
 ├── docker-compose.yml

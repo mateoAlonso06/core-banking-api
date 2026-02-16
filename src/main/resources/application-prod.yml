@@ -1,0 +1,73 @@
+spring:
+  config:
+    import: "aws-parameterstore:/config/banking-system/"
+  datasource:
+    url: jdbc:postgresql://${AWS_DB_ENDPOINT}:${DB_PORT}/${DB_NAME}
+    username: ${AWS_DB_USERNAME}
+    password: ${spring.datasource.password}
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 3
+      # Timeouts
+      connection-timeout: 20000       # 20s - Max time for get a connection
+      idle-timeout: 300000            # 5min - Close inactive connections
+      max-lifetime: 1800000           # 30min - Renew connections periodically
+
+      # Monitoring and detection problems
+      leak-detection-threshold: 30000 # 30s - Detect connections that are not free
+      connection-test-query: SELECT 1 # Validate connections before use
+      pool-name: BankingSystemPool
+
+      # Optimizations for PostgreSQL
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+  servlet:
+    multipart:
+      enabled: false                # Disables file uploads - not needed for banking API
+      max-request-size: 1MB         # Fallback limit if multipart ever enabled
+      max-file-size: 1MB
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    clean-disabled: true
+
+server:
+  tomcat:
+    max-http-form-post-size: 1MB      # Limits form POST size (prevents large form attacks)
+    max-swallow-size: 2MB             # Max bytes Tomcat swallows for aborted requests
+    max-http-response-header-size: 8KB
+    connection-timeout: 20000         # 20s - Drops slow/idle connections
+  max-http-request-header-size: 8KB   # Prevents header overflow attacks
+logging:
+  level:
+    root: WARN
+    com.banking.system: INFO
+
+management:
+  endpoint:
+    health:
+      show-details: never             # Hides internal health info from external users
+      show-components: never          # Prevents component enumeration
+
+# Swagger UI disabled in production - security best practice
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Strict CSP for production REST API
+security:
+  csp:
+    policy: "default-src 'none'; frame-ancestors 'none';"

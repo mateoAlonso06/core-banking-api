@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  # Dashboard provider for local JSON files
+  - name: 'Core Banking Dashboards'
+    orgId: 1
+    folder: 'Core Banking'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

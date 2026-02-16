@@ -34,3 +34,10 @@ build/
 
 ### Env files ###
 .env
+
+### Claude Code ###
+CLAUDE.md
+.claude/
+
+### IntelliJ Run Configurations ###
+.run/

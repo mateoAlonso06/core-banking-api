@@ -53,6 +53,9 @@ public class UserJpaEntity {
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
+    @Column(name = "two_factor_enabled", nullable = false)
+    private boolean twoFactorEnabled = false;
+
     @PrePersist
     protected void prePersist() {
         this.createdAt = Instant.now();

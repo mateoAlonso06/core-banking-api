@@ -1,6 +1,7 @@
 package com.banking.system.auth.infraestructure.adapter.in.rest.dto.request;
 
 import com.banking.system.auth.application.dto.command.RegisterCommand;
+import com.banking.system.common.infraestructure.utils.SanitizeHtml;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,9 +17,11 @@ public record RegisterUserRequest(
         String password,
 
         @NotBlank(message = "First name is required") @Size(max = 100)
+        @SanitizeHtml
         String firstName,
 
         @NotBlank(message = "Last name is required") @Size(max = 100)
+        @SanitizeHtml
         String lastName,
 
         @NotBlank(message = "Document type is required") @Size(max = 20)
@@ -31,18 +34,22 @@ public record RegisterUserRequest(
         LocalDate birthDate,
 
         @NotBlank(message = "Phone is required") @Size(max = 20)
+        @SanitizeHtml
         String phone,
 
         @Size(max = 255)
         @NotBlank
+        @SanitizeHtml
         String address,
 
         @Size(max = 100)
         @NotBlank
+        @SanitizeHtml
         String city,
 
         @Size(max = 2)
         @NotBlank
+        @SanitizeHtml
         String country
 ) {
 
