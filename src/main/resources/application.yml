@@ -68,6 +68,14 @@ management:
   metrics:
     tags:
       application: core-bank
+  tracing:
+    sampling:
+      probability: 1.0  # 100% sampling for dev, adjust in prod
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}
+loki:
+  url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
 logging:
   level:
     root: INFO

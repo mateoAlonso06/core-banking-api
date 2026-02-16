@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 15s # How often to scrape targets by default
+  scrape_timeout: 10s # Timeout for scraping targets
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'core-banking'
+    environment: 'dev'
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Spring Boot Actuator metrics
+  - job_name: 'spring-boot-app'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['app:8080']
+        labels:
+          application: 'core-bank'
+          service: 'banking-api'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL metrics (optional - requires postgres_exporter)
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Redis metrics (optional - requires redis_exporter)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']

@@ -35,6 +35,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
+    @Value("${security.csp.policy:default-src 'none'; frame-ancestors 'none';}")
+    private String cspPolicy;
+
     private final CorrelationIdFilter correlationIdFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<RateLimitFilter> rateLimitFilterProvider;
@@ -44,9 +47,9 @@ public class SecurityConfig {
         /* These headers protect the client-side interaction and enforce secure communication.
          */
         http.headers(headers -> headers
-                // CSP: Prevents XSS by only allowing resources from the same origin.
+                // CSP: Configurable per environment (strict in prod, permissive in dev for Swagger UI)
                 .contentSecurityPolicy(csp -> csp
-                        .policyDirectives("default-src 'none'; frame-ancestors 'none';"))
+                        .policyDirectives(cspPolicy))
                 // HSTS: Instructs the browser to only use HTTPS for the next year.
                 .httpStrictTransportSecurity(hsts -> hsts
                         .includeSubDomains(true)

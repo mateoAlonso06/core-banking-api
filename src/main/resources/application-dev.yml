@@ -10,6 +10,19 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+
+# Swagger UI enabled for development
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# Permissive CSP for Swagger UI in development
+security:
+  csp:
+    policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none';"
+
 logging:
   level:
     com.banking.system: DEBUG

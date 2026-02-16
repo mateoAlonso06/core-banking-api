@@ -59,3 +59,15 @@ management:
     health:
       show-details: never             # Hides internal health info from external users
       show-components: never          # Prevents component enumeration
+
+# Swagger UI disabled in production - security best practice
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Strict CSP for production REST API
+security:
+  csp:
+    policy: "default-src 'none'; frame-ancestors 'none';"
