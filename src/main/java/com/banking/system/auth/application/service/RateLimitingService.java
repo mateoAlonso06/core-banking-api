@@ -74,7 +74,12 @@ public class RateLimitingService {
 
     /**
      * Factory method that produces BucketConfiguration with specified capacity.
-     * Token bucket refills completely every minute.
+     * Token bucket refills progressively (greedy refill strategy).
+     * With greedy refill, tokens are added continuously over time rather than
+     * waiting for the full duration to elapse.
+     *
+     * Example: With 60 capacity and 1 minute duration, a new token is added
+     * every second (60 tokens / 60 seconds = 1 token/second).
      *
      * @param capacity Number of tokens (requests) allowed per minute
      * @return BucketConfiguration instance
@@ -82,7 +87,7 @@ public class RateLimitingService {
     private BucketConfiguration getConfig(long capacity) {
         Bandwidth limit = Bandwidth.builder()
                 .capacity(capacity)
-                .refillIntervally(capacity, Duration.ofMinutes(1))
+                .refillGreedy(capacity, Duration.ofMinutes(1))
                 .build();
 
         return BucketConfiguration.builder()

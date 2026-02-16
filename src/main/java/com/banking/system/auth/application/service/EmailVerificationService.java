@@ -28,6 +28,14 @@ public class EmailVerificationService implements VerifyEmailUseCase, ResendVerif
     private final UserRepositoryPort userRepository;
     private final UserEventPublisher eventPublisher;
 
+    /**
+     * Verifies the user's email using the provided verification token. If the token is valid and not expired,
+     * the user's status is updated to active. If the token is invalid, expired, or already used, an exception is thrown.
+     *
+     * @param command The command containing the verification token.
+     * @throws InvalidVerificationTokenException If the token is invalid, expired, or already used.
+     * @throws UserNotFoundException If no user is found associated with the token.
+     */
     @Override
     @Transactional
     public void verifyEmail(VerifyEmailCommand command) {
@@ -53,6 +61,14 @@ public class EmailVerificationService implements VerifyEmailUseCase, ResendVerif
         log.info("Email verified successfully for user {}", user.getId());
     }
 
+    /**
+     * Resends the verification email to the user if they are still pending verification.
+     * If the user is already verified or processed, an exception is thrown.
+     *
+     * @param command The command containing the email address to resend the verification email to.
+     * @throws UserNotFoundException If no user is found with the provided email.
+     * @throws UserIsAlreadyProcessedException If the user is already verified or processed.
+     */
     @Override
     @Transactional
     public void resendVerificationEmail(ResendVerificationCommand command) {

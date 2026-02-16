@@ -14,11 +14,11 @@
     <springProfile name="dev,default">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} ${CORRELATION_PATTERN} [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n</pattern>
+                <pattern>%cyan(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green(${CORRELATION_PATTERN}) %magenta([%X{traceId:-},%X{spanId:-}]) %highlight(%-5level) %cyan(%logger{36}) %gray(-) %msg%n</pattern>
             </encoder>
         </appender>
 
-        <!-- Loki appender for dev -->
+        <!-- Loki appender for dev (optional - silently fails if service unavailable) -->
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
             <http>
                 <url>${LOKI_URL}</url>
@@ -42,16 +42,30 @@
                     </pattern>
                 </message>
             </format>
+            <!-- Fail silently if Loki is not available -->
+            <dropRateLimitedEvents>true</dropRateLimitedEvents>
+        </appender>
+
+        <!-- Async wrapper for Loki to prevent blocking on failures -->
+        <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="LOKI"/>
+            <neverBlock>true</neverBlock>
+            <queueSize>512</queueSize>
+            <discardingThreshold>0</discardingThreshold>
         </appender>
 
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOKI"/>
+            <appender-ref ref="ASYNC_LOKI"/>
         </root>
 
         <!-- Show SQL queries in dev -->
         <logger name="org.hibernate.SQL" level="DEBUG"/>
         <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+        <!-- Silence monitoring service connection errors -->
+        <logger name="com.github.loki4j" level="ERROR"/>
+        <logger name="zipkin2.reporter" level="ERROR"/>
     </springProfile>
 
     <!-- Production profile -->
@@ -63,7 +77,7 @@
             </encoder>
         </appender>
 
-        <!-- Loki appender for production -->
+        <!-- Loki appender for production (optional - silently fails if service unavailable) -->
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
             <http>
                 <url>${LOKI_URL}</url>
@@ -87,11 +101,21 @@
                     </pattern>
                 </message>
             </format>
+            <!-- Fail silently if Loki is not available -->
+            <dropRateLimitedEvents>true</dropRateLimitedEvents>
+        </appender>
+
+        <!-- Async wrapper for Loki to prevent blocking on failures -->
+        <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="LOKI"/>
+            <neverBlock>true</neverBlock>
+            <queueSize>512</queueSize>
+            <discardingThreshold>0</discardingThreshold>
         </appender>
 
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOKI"/>
+            <appender-ref ref="ASYNC_LOKI"/>
         </root>
 
         <!-- Application logs at INFO level in production -->
@@ -99,5 +123,9 @@
 
         <!-- Hide SQL queries in production -->
         <logger name="org.hibernate.SQL" level="WARN"/>
+
+        <!-- Silence monitoring service connection errors -->
+        <logger name="com.github.loki4j" level="ERROR"/>
+        <logger name="zipkin2.reporter" level="ERROR"/>
     </springProfile>
 </configuration>

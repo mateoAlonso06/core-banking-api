@@ -67,6 +67,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * Authenticated API endpoints get generous limits for legitimate users.
      * Public endpoints get moderate limits.
      *
+     * Each endpoint type uses a separate bucket key to prevent interference.
+     *
      * @param clientIp    Client IP address (unique key for rate limiting)
      * @param requestPath Request URI path
      * @return Bucket configured with appropriate rate limit
@@ -74,16 +76,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private Bucket resolveBucketForEndpoint(String clientIp, String requestPath) {
         // Strict limits for authentication endpoints (prevent brute force)
         if (isAuthenticationEndpoint(requestPath)) {
-            return rateLimitingService.resolveBucketForLogin(clientIp);
+            return rateLimitingService.resolveBucketForLogin(clientIp + ":auth");
         }
 
         // Moderate limits for public endpoints
         if (isPublicEndpoint(requestPath)) {
-            return rateLimitingService.resolveBucketForPublic(clientIp);
+            return rateLimitingService.resolveBucketForPublic(clientIp + ":public");
         }
 
         // Generous limits for authenticated API endpoints (normal usage)
-        return rateLimitingService.resolveBucketForAuthenticatedApi(clientIp);
+        return rateLimitingService.resolveBucketForAuthenticatedApi(clientIp + ":api");
     }
 
     /**
