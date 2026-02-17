@@ -4,7 +4,6 @@ import com.banking.system.auth.domain.port.out.TokenGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -13,7 +12,7 @@ public class JwtTokenGenerator implements TokenGenerator {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public String generateToken(UUID userId, String email, String role, Set<String> permissions) {
-        return jwtTokenProvider.generateToken(userId.toString(), email, role, permissions);
+    public String generateToken(UUID userId, String email, String role) {
+        return jwtTokenProvider.generateToken(userId.toString(), email, role);
     }
 }

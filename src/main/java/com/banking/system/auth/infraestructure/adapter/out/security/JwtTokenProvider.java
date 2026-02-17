@@ -7,10 +7,7 @@ import com.auth0.jwt.interfaces.JWTVerifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 @Component
 public class JwtTokenProvider {
@@ -28,7 +25,7 @@ public class JwtTokenProvider {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    public String generateToken(String userId, String email, String role, Set<String> permissions) {
+    public String generateToken(String userId, String email, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
@@ -36,7 +33,6 @@ public class JwtTokenProvider {
                 .withSubject(userId)
                 .withClaim("email", email)
                 .withClaim("role", role)
-                .withClaim("permissions", new ArrayList<>(permissions))
                 .withIssuedAt(now)
                 .withExpiresAt(expiryDate)
                 .sign(algorithm);
@@ -52,9 +48,5 @@ public class JwtTokenProvider {
 
     public String getRoleFromToken(String token) {
         return validateToken(token).getClaim("role").asString();
-    }
-
-    public List<String> getPermissionsFromToken(String token) {
-        return validateToken(token).getClaim("permissions").asList(String.class);
     }
 }

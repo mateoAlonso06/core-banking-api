@@ -81,8 +81,7 @@ public class TwoFactorService implements
         String token = tokenGenerator.generateToken(
                 user.getId(),
                 user.getEmail().value(),
-                role.getName().name(),
-                role.getPermissionCodes()
+                role.getName().name()
         );
 
         log.info("2FA verification successful for user: {}", user.getId());
