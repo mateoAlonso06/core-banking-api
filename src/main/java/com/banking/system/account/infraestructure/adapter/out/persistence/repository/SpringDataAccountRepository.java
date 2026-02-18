@@ -23,4 +23,6 @@ public interface SpringDataAccountRepository extends JpaRepository<AccountJpaEnt
     List<AccountJpaEntity> findAllByCustomerId(UUID customerId);
 
     Optional<AccountJpaEntity> findByCustomerId(UUID customerId);
+
+    boolean existsByCustomerId(UUID customerId);
 }

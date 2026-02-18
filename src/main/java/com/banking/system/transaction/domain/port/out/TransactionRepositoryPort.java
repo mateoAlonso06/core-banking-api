@@ -3,6 +3,7 @@ package com.banking.system.transaction.domain.port.out;
 import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.transaction.domain.model.Transaction;
+import com.banking.system.transaction.domain.model.TransactionStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +19,6 @@ public interface TransactionRepositoryPort {
     PagedResult<Transaction> findAllTransactionsByAccountId(PageRequest pageRequest, UUID accountId);
 
     PagedResult<Transaction> findALlByAccountIds(List<UUID> accountIds, PageRequest pageRequest);
+
+    PagedResult<Transaction> findAllByAccountIdsAndStatus(List<UUID> accountIds, TransactionStatus status, PageRequest pageRequest);
 }

@@ -4,6 +4,7 @@ import com.banking.system.common.domain.PageRequest;
 import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.common.infraestructure.mapper.PageMapper;
 import com.banking.system.transaction.domain.model.Transaction;
+import com.banking.system.transaction.domain.model.TransactionStatus;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransactionJpaEntityMapper;
 import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
@@ -79,6 +80,20 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
         );
 
         var page = transactionJpaRepository.findAllByAccountIdIn(accountIds, pageable);
+
+        return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
+    }
+
+    @Override
+    public PagedResult<Transaction> findAllByAccountIdsAndStatus(List<UUID> accountIds, TransactionStatus status, PageRequest pageRequest) {
+        var base = PageMapper.toPageable(pageRequest);
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                base.getPageNumber(),
+                base.getPageSize(),
+                SORT_BY_EXECUTED_AT_DESC
+        );
+
+        var page = transactionJpaRepository.findAllByAccountIdInAndStatus(accountIds, status, pageable);
 
         return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
     }

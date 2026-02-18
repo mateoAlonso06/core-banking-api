@@ -13,7 +13,7 @@ public class TransactionDomainMapper {
                 null, // amountFee - not applicable for individual transactions
                 transaction.getAmount().getCurrency().code(),
                 transaction.getBalanceAfter() != null ? transaction.getBalanceAfter().getValue() : null,
-                transaction.getDescription() != null ? transaction.getDescription().value() : null,
+                transaction.getDescription() != null ? transaction.getDescription().toString() : null,
                 transaction.getReferenceNumber().value(),
                 transaction.getExecutedAt().toString(),
                 transaction.getStatus().name()

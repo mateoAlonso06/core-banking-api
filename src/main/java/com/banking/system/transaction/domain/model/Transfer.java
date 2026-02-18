@@ -94,7 +94,7 @@ public class Transfer {
                 destinationAccountId,
                 debitTransactionId,
                 creditTransactionId,
-                category != null ? category : TransferCategory.OTROS, // default category
+                category != null ? category : TransferCategory.OTHERS, // default category
                 amount,
                 feeAmount,
                 description,

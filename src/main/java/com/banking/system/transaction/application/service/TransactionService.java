@@ -69,7 +69,7 @@ public class TransactionService implements
                 TransactionType.DEPOSIT,
                 depositAmount,
                 balanceAfter,
-                new Description("Deposit of " + depositAmount + " to account " + account.getAccountNumber()),
+                new Description("Deposit of " + depositAmount + " to account " + account.getAccountNumber().value()),
                 ReferenceNumber.generate(),
                 idempotencyKey
         );
@@ -178,7 +178,7 @@ public class TransactionService implements
                 .toList();
 
         PagedResult<Transaction> transactions = transactionRepositoryPort
-                .findALlByAccountIds(accountIds, pageRequest);
+                .findAllByAccountIdsAndStatus(accountIds, TransactionStatus.COMPLETED, pageRequest);
 
         return PagedResult.mapContent(transactions, TransactionDomainMapper::toResult);
     }
@@ -187,17 +187,16 @@ public class TransactionService implements
     @Override
     @Transactional(readOnly = true)
     public TransactionResult getTransactionById(UUID transactionId, UUID userId) {
+        log.debug("initiating getTransactionById for transactionId: {} and userId: {}", transactionId, userId);
+
         Customer customer = customerRepositoryPort.findByUserId(userId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for userId: " + userId));
 
         Transaction transaction = transactionRepositoryPort.findById(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException("Transaction not found: " + transactionId));
 
-        Account account = accountRepositoryPort.findByCustomerId(customer.getId())
-                .orElseThrow(() -> new AccountNotFoundException("Account not found for customerId: " + customer.getId()));
-
-        if (!customer.getId().equals(account.getCustomerId())) {
-            throw new AccountAccessDeniedException("Transaction does not belong to the authenticated user");
+        if (!accountRepositoryPort.existsByCustomerId(customer.getId())) {
+            throw new AccountAccessDeniedException("Authenticated user does not have access to this transaction");
         }
 
         return TransactionDomainMapper.toResult(transaction);
