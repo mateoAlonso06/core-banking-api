@@ -6,18 +6,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for integration tests with optimized TestContainers setup.
  *
- * <p>Key optimizations:
- * <ul>
- *   <li>Singleton container shared across all test classes (static final)</li>
- *   <li>Container reuse enabled via testcontainers.properties</li>
- *   <li>Lightweight postgres:16-alpine image</li>
- * </ul>
+ * <p>Uses static initializer (not @Container) so the container lives for the
+ * entire JVM lifecycle and is shared across ALL test classes.
  *
  * <p>Usage: Extend this class in your integration test classes:
  * <pre>
@@ -25,14 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *     // Your tests here
  * }
  * </pre>
- *
- * <p>Performance impact:
- * <ul>
- *   <li>First test run: ~10-15 seconds (container startup)</li>
- *   <li>Subsequent test runs: ~2-3 seconds (container reused)</li>
- * </ul>
  */
-@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -46,21 +33,20 @@ public abstract class AbstractIntegrationTest {
     /**
      * Singleton PostgreSQL container shared across all integration tests.
      *
-     * The container is started once and reused across all test classes thanks to:
-     * 1. Static final declaration (singleton pattern)
-     * 2. withReuse(true) configuration
-     * 3. testcontainers.reuse.enable=true property
-     *
-     * Note: The container will be stopped automatically when the JVM exits,
-     * but can be reused in subsequent test runs if configured properly.
+     * Started via static initializer so the container survives across test classes.
+     * Using @Container would let @Testcontainers stop the container after each
+     * test class, breaking subsequent classes that reuse the Spring context.
      */
-    @Container
     private static final PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>(POSTGRES_IMAGE)
                     .withDatabaseName(TEST_DB_NAME)
                     .withUsername(TEST_USERNAME)
                     .withPassword(TEST_PASSWORD)
-                    .withReuse(true); // Enable container reuse between test runs
+                    .withReuse(true);
+
+    static {
+        postgres.start();
+    }
 
     /**
      * Configures Spring datasource properties dynamically from the container.

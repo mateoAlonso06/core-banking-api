@@ -18,19 +18,19 @@ class CustomerRestControllerTestIT extends AbstractIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void shouldReturnCustomer_whenRequestingOwnProfile_withProperAuthority() throws Exception {
+    void shouldReturnNotFound_whenRequestingOwnProfile_withProperAuthority_butNoCustomer() throws Exception {
         UUID userId = UUID.randomUUID();
 
         mockMvc.perform(get("/api/v1/customers/me")
                 .with(user(userId.toString())
                         .authorities(new SimpleGrantedAuthority("CUSTOMER_VIEW_OWN"))))
-                .andExpect(status().isOk());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void shouldReturnUnauthorized_whenRequestingOwnProfile_withoutAuthentication() throws Exception {
+    void shouldReturnForbidden_whenRequestingOwnProfile_withoutAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/customers/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test
