@@ -439,7 +439,7 @@
                                 <include>**/*IT.java</include>
                                 <include>**/*IntegrationTest.java</include>
                             </includes>
-                            <systemPropertyVariables>
+                            <systemPropertyVariables>A
                                 <testcontainers.reuse.enable>true</testcontainers.reuse.enable>
                             </systemPropertyVariables>
                         </configuration>
