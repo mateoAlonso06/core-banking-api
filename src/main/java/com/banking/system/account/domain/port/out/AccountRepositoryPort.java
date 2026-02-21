@@ -23,5 +23,5 @@ public interface AccountRepositoryPort {
 
     List<Account> findAllByCustomerId(UUID customerId);
 
-    Optional<Account> findByCustomerId(UUID id);
+    boolean existsByCustomerId(UUID customerId);
 }

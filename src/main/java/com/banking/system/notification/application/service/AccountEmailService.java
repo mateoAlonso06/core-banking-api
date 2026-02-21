@@ -10,8 +10,8 @@ import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -19,23 +19,30 @@ import java.util.function.Supplier;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class AccountEmailService implements SendEmailUseCase {
     private final EmailSenderPort emailSenderPort;
     private final ProxyManager<String> proxyManager;
+
+    public AccountEmailService(EmailSenderPort emailSenderPort,
+                               @Nullable ProxyManager<String> proxyManager) {
+        this.emailSenderPort = emailSenderPort;
+        this.proxyManager = proxyManager;
+    }
 
     @Override
     @CircuitBreaker(name = "emailService", fallbackMethod = "fallbackSendEmail")
     @Retry(name = "emailService")
     public void sendEmail(EmailNotification emailNotification) {
-        String rateLimitKey = "email:" + emailNotification.to();
-        Bucket bucket = resolveBucket(rateLimitKey, 5, Duration.ofHours(1));
+        if (proxyManager != null) {
+            String rateLimitKey = "email:" + emailNotification.to();
+            Bucket bucket = resolveBucket(rateLimitKey, 5, Duration.ofHours(1));
 
-        if (!bucket.tryConsume(1)) {
-            log.warn("Rate limit exceeded for email: {}", emailNotification.to());
-            throw new EmailRateLimitExceededException(
-                    "Too many emails sent. Please try again later."
-            );
+            if (!bucket.tryConsume(1)) {
+                log.warn("Rate limit exceeded for email: {}", emailNotification.to());
+                throw new EmailRateLimitExceededException(
+                        "Too many emails sent. Please try again later."
+                );
+            }
         }
         emailSenderPort.sendEmail(emailNotification);
     }

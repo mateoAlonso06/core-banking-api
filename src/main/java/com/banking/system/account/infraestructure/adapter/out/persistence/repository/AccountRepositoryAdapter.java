@@ -62,8 +62,7 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     }
 
     @Override
-    public Optional<Account> findByCustomerId(UUID id) {
-        var account = springDataAccountRepository.findByCustomerId(id);
-        return account.map(AccountJpaMapper::toDomainEntity);
+    public boolean existsByCustomerId(UUID customerId) {
+        return springDataAccountRepository.existsByCustomerId(customerId);
     }
 }

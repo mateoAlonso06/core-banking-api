@@ -113,13 +113,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles access denied exceptions.
+     * Handles access denied exceptions (domain exceptions).
      * Logs: Full details for security auditing
      * Response: Generic message to prevent privilege escalation reconnaissance
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied [correlationId={}]: {}",
+                MDC.get("correlationId"), ex.getMessage());
+
+        String message = sanitizeMessage(ex.getMessage(), MSG_ACCESS_DENIED);
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", message);
+    }
+
+    /**
+     * Handles Spring Security access denied exceptions (@PreAuthorize, @Secured, etc).
+     * Triggered when authenticated users lack required permissions/roles.
+     * Logs: Full details for security auditing and privilege escalation attempts
+     * Response: Generic message to prevent privilege escalation reconnaissance
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleSpringSecurityAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
+        log.warn("Spring Security access denied [correlationId={}]: {}",
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_ACCESS_DENIED);

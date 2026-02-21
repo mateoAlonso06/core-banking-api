@@ -1,0 +1,1216 @@
+{
+  "info": {
+    "_postman_id": "fb8d8b31-ce96-4f49-aee5-db892cc5baf5",
+    "name": "Core Bank API - Collections",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "39661247"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Create Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Check if 'id' field exists\", function () {",
+                  "    pm.expect(response).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.test(\"Check if 'email' field exists\", function() {",
+                  "    pm.expect(response).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": {{email_2}},\n    \"password\": {{password}},\n    \"firstName\": \"Midu\",\n    \"lastName\": \"Dev\",\n    \"documentType\": \"passport\",\n    \"documentNumber\": \"22111222\",\n    \"birthDate\": \"2000-01-01\",\n    \"phone\": \"+54966555501\",\n    \"address\": \"Retiro 123 st\",\n    \"city\": \"Retiro\",\n    \"country\": \"AR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Invalid Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message is 'Bad Request'\", function () {",
+                  "    pm.expect(response.error).to.eql(\"Bad Request\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"email_example@gmail.com\",\n    \"password\": \"Password_Secure123\",\n    \"firstName\": \" \",\n    \"lastName\": \" \",\n    \"documentType\": \"invalid document type\",\n    \"documentNumber\": \"invalid document number\",\n    \"birthDate\": \"2000-01-01\",\n    \"phone\": \"+5411223344\",\n    \"address\": \"742 Evergreen Terrace\",\n    \"city\": \"Buenos Aires\",\n    \"country\": \"AR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend email verification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": {{email}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/resend-verification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "resend-verification"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"73d386b3-c5cd-4cd1-8075-9500a46086cd\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Check if contains 'email' field\", () => {",
+                  "    pm.expect(response).to.have.property('email');",
+                  "})",
+                  "",
+                  "pm.test(\"Check if contains 'token' field\", () => {",
+                  "    pm.expect(response).to.have.property('token');",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": {{email}},\n    \"password\": {{password}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enable 2FA",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJDVVNUT01FUl9VUERBVEUiLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlRSQU5TQUNUSU9OX1RSQU5TRkVSIiwiQ1VTVE9NRVJfVklFV19PV04iLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiVFJBTlNBQ1RJT05fREVQT1NJVCIsIkFDQ09VTlRfQ1JFQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iXSwiaWF0IjoxNzcxMjc2NzQ5LCJleHAiOjE3NzEzNjMxNDl9.gHdrxwiYASZhnIlpmEersG39BnIEp5VgiNAMxmDgrd8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"enable\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/2fa/toggle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "2fa",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify 2FA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sessionToken\": \"eed3ea3a-93ed-4f68-af67-35b9fbe35d30\",\n    \"code\": \"396129\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/2fa/verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "2fa",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable 2FA",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJDVVNUT01FUl9VUERBVEUiLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlRSQU5TQUNUSU9OX1RSQU5TRkVSIiwiQ1VTVE9NRVJfVklFV19PV04iLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiVFJBTlNBQ1RJT05fREVQT1NJVCIsIkFDQ09VTlRfQ1JFQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iXSwiaWF0IjoxNzcxMjc2NzQ5LCJleHAiOjE3NzEzNjMxNDl9.gHdrxwiYASZhnIlpmEersG39BnIEp5VgiNAMxmDgrd8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"enable\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/2fa/toggle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "2fa",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Status 2FA",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJDVVNUT01FUl9VUERBVEUiLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlRSQU5TQUNUSU9OX1RSQU5TRkVSIiwiQ1VTVE9NRVJfVklFV19PV04iLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiVFJBTlNBQ1RJT05fREVQT1NJVCIsIkFDQ09VTlRfQ1JFQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iXSwiaWF0IjoxNzcxMjc2NzQ5LCJleHAiOjE3NzEzNjMxNDl9.gHdrxwiYASZhnIlpmEersG39BnIEp5VgiNAMxmDgrd8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/2fa/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "2fa",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJDVVNUT01FUl9VUERBVEUiLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlRSQU5TQUNUSU9OX1RSQU5TRkVSIiwiQ1VTVE9NRVJfVklFV19PV04iLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiVFJBTlNBQ1RJT05fREVQT1NJVCIsIkFDQ09VTlRfQ1JFQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iXSwiaWF0IjoxNzcxMjc2NzQ5LCJleHAiOjE3NzEzNjMxNDl9.gHdrxwiYASZhnIlpmEersG39BnIEp5VgiNAMxmDgrd8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"oldPassword\": {{password}},\n    \"newPassword\": \"New_SecurePass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Get Personal Customer Info",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJDVVNUT01FUl9VUERBVEUiLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlRSQU5TQUNUSU9OX1RSQU5TRkVSIiwiQ1VTVE9NRVJfVklFV19PV04iLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiVFJBTlNBQ1RJT05fREVQT1NJVCIsIkFDQ09VTlRfQ1JFQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iXSwiaWF0IjoxNzcxMjc2NzQ5LCJleHAiOjE3NzEzNjMxNDl9.gHdrxwiYASZhnIlpmEersG39BnIEp5VgiNAMxmDgrd8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJwZXJtaXNzaW9ucyI6WyJUUkFOU0FDVElPTl9UUkFOU0ZFUiIsIlRSQU5TQUNUSU9OX1dJVEhEUkFXIiwiQ1VTVE9NRVJfVVBEQVRFIiwiVFJBTlNBQ1RJT05fVklFV19PV04iLCJBQ0NPVU5UX0NSRUFURSIsIlRSQU5TQUNUSU9OX0RFUE9TSVQiLCJBQ0NPVU5UX1ZJRVdfT1dOIiwiQ1VTVE9NRVJfVklFV19PV04iXSwiaWF0IjoxNzcxMjg0MTI3LCJleHAiOjE3NzEzNzA1Mjd9.QjIkelbBCl5zZj6vOusehWbEhkarKf--7EcgtEOJMVo",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Walter\",\n    \"lastName\": \"White\",\n    \"phone\": \"2266565656\",\n    \"address\": \"Fake address 123\",\n    \"city\": \"Fake city\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Create Banking Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountType\": \"CHECKING\",\n    \"currency\": \"ARS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all my Banking Accounts",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"ARS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get an specific Bank Account",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/me/2c00e676-1e7e-40f5-98a4-b5bb2c688f22",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "me",
+                "2c00e676-1e7e-40f5-98a4-b5bb2c688f22"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Balance of a specific Account",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/me/2c00e676-1e7e-40f5-98a4-b5bb2c688f22/balance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "me",
+                "2c00e676-1e7e-40f5-98a4-b5bb2c688f22",
+                "balance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Account Public Data by alias",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/search?alias=young.valley.102",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "alias",
+                  "value": "young.valley.102"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Types Available",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/accounts/types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "types"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Login Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": {{admin_email}},\n    \"password\": {{admin_password}}\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Customer",
+          "item": [
+            {
+              "name": "Get Customer By Id",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2EwYzk5YS1lZjViLTRhNGQtYThmMC1iNmM2MTA0ODVmYWIiLCJlbWFpbCI6Im1hdGVvYWxvbnNpbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJwZXJtaXNzaW9ucyI6WyJBQ0NPVU5UX0NSRUFURSIsIlRSQU5TQUNUSU9OX1ZJRVdfT1dOIiwiQ1VTVE9NRVJfVVBEQVRFIiwiQ1VTVE9NRVJfVklFV19BTEwiLCJVU0VSX1ZJRVciLCJLWUNfUkVKRUNUIiwiQVVESVRfRVhQT1JUIiwiQUNDT1VOVF9WSUVXIiwiQUNDT1VOVF9DTE9TRSIsIktZQ19BUFBST1ZFIiwiQUNDT1VOVF9WSUVXX09XTiIsIkFDQ09VTlRfQkxPQ0siLCJUUkFOU0FDVElPTl9XSVRIRFJBVyIsIlVTRVJfQkxPQ0siLCJUUkFOU0FDVElPTl9WSUVXX0FMTCIsIkNVU1RPTUVSX1ZJRVciLCJUUkFOU0FDVElPTl9WSUVXIiwiVVNFUl9DSEFOR0VfUk9MRSIsIlRSQU5TQUNUSU9OX1JFVkVSU0UiLCJDVVNUT01FUl9WSUVXX09XTiIsIlRSQU5TQUNUSU9OX0RFUE9TSVQiLCJUUkFOU0FDVElPTl9UUkFOU0ZFUiIsIkFVRElUX1ZJRVciLCJBQ0NPVU5UX1ZJRVdfQUxMIl0sImlhdCI6MTc3MTI4MzgzMCwiZXhwIjoxNzcxMzcwMjMwfQ.pvVL0R7wfnA5MPBrHv2d9EnoW4Pux6gYvm53ospjr-g",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/customers/c5490941-b582-4d87-a888-9176a13bf766",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "customers",
+                    "c5490941-b582-4d87-a888-9176a13bf766"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get All Customers",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2EwYzk5YS1lZjViLTRhNGQtYThmMC1iNmM2MTA0ODVmYWIiLCJlbWFpbCI6Im1hdGVvYWxvbnNpbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzEzNDgwNTgsImV4cCI6MTc3MTQzNDQ1OH0.f5FOxOGM3eClXrofBTrok48W1E6lXuB-RaDClvPAZqQ",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"firstName\": \"Walter\",\n    \"lastName\": \"White\",\n    \"phone\": \"2266565656\",\n    \"addres\": \"Fake address 123\",\n    \"city\": \"Fake city\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/customers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "customers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Approve KYC",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2EwYzk5YS1lZjViLTRhNGQtYThmMC1iNmM2MTA0ODVmYWIiLCJlbWFpbCI6Im1hdGVvYWxvbnNpbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzEzNDgwNTgsImV4cCI6MTc3MTQzNDQ1OH0.f5FOxOGM3eClXrofBTrok48W1E6lXuB-RaDClvPAZqQ",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/customers/c5490941-b582-4d87-a888-9176a13bf766/kyc/approve",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "customers",
+                    "c5490941-b582-4d87-a888-9176a13bf766",
+                    "kyc",
+                    "approve"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reject KYC",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2EwYzk5YS1lZjViLTRhNGQtYThmMC1iNmM2MTA0ODVmYWIiLCJlbWFpbCI6Im1hdGVvYWxvbnNpbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzEzNDgwNTgsImV4cCI6MTc3MTQzNDQ1OH0.f5FOxOGM3eClXrofBTrok48W1E6lXuB-RaDClvPAZqQ",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/customers/c5490941-b582-4d87-a888-9176a13bf766/kyc/reject",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "customers",
+                    "c5490941-b582-4d87-a888-9176a13bf766",
+                    "kyc",
+                    "reject"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Transaction",
+          "item": [
+            {
+              "name": "Get transactiom by id",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Y2EwYzk5YS1lZjViLTRhNGQtYThmMC1iNmM2MTA0ODVmYWIiLCJlbWFpbCI6Im1hdGVvYWxvbnNpbkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzEzODY5ODQsImV4cCI6MTc3MTQ3MzM4NH0.QYNJ6pepwhrZ84VEeEfwnVruOy3LkkR0Lk_Vn1V2CAs",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"fromAccountId\": \"2c00e676-1e7e-40f5-98a4-b5bb2c688f22\",\n    \"toAccountNumber\": \"0232723441918244340208\", // you can put the alias here and is valid to transfer, only 1 method \n    \"amount\": 1500.00,\n    \"currency\": \"ars\",\n    \"category\": \"OTHERS\",\n    \"description\": \"Trasnfer to my other account\",\n    \"idempotencyKey\": \"78d452fe-3dfa-422b-9309-bd0b62ee044c\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/transfers/c0222914-63e8-44ba-aeea-9119bdc470b3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "transfers",
+                    "c0222914-63e8-44ba-aeea-9119bdc470b3"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transaction",
+      "item": [
+        {
+          "name": "Deposit pesos in pesos account",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 15000.00,\n    \"currency\": \"ars\",\n    \"idempotencyKey\": \"b08bbd8e-f738-4977-9ef6-b0fe1fb00c18\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/accounts/2c00e676-1e7e-40f5-98a4-b5bb2c688f22/deposits",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                "accounts",
+                "2c00e676-1e7e-40f5-98a4-b5bb2c688f22",
+                "deposits"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get a specific transaction by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"ARS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/85edd414-e998-4f01-9537-67eddf29a32e",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                "85edd414-e998-4f01-9537-67eddf29a32e"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Withdraw money",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 11000,\n    \"currency\": \"ARS\",\n    \"idempotencyKey\": \"780583b7-bfcd-4f37-b4dc-e9741cb8eb57\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/accounts/2c00e676-1e7e-40f5-98a4-b5bb2c688f22/withdrawals",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                "accounts",
+                "2c00e676-1e7e-40f5-98a4-b5bb2c688f22",
+                "withdrawals"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get my all transactions",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountType\": \"SAVINGS\",\n    \"currency\": \"ARS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Transfer money by CBU",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fromAccountId\": \"2c00e676-1e7e-40f5-98a4-b5bb2c688f22\",\n    \"toAccountNumber\": \"0232723441918244340208\", // you can put the alias here and is valid to transfer, only 1 method \n    \"amount\": 1500.00,\n    \"currency\": \"ars\",\n    \"category\": \"OTHERS\",\n    \"description\": \"Trasnfer to my other account\",\n    \"idempotencyKey\": \"78d452fe-3dfa-422b-9309-bd0b62ee044c\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transfers/c0222914-63e8-44ba-aeea-9119bdc470b3/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfers",
+                "c0222914-63e8-44ba-aeea-9119bdc470b3",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transfer by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NGNkMjZkNC04NWU4LTQ0NWItODg3ZS1jYzUyZGUzYWY1M2IiLCJlbWFpbCI6ImFsb25zb21hdGVvMjAwMkBnbWFpbC5jb20iLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NzEzNDk5MDksImV4cCI6MTc3MTQzNjMwOX0.zrB1V3tAGstOnipdYiwii3ojrZHUlHOIJBhQ0Pje5qs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fromAccountId\": \"2c00e676-1e7e-40f5-98a4-b5bb2c688f22\",\n    \"toAccountNumber\": \"0232723441918244340208\", // you can put the alias here and is valid to transfer, only 1 method \n    \"amount\": 1500.00,\n    \"currency\": \"ars\",\n    \"category\": \"OTHERS\",\n    \"description\": \"Trasnfer to my other account\",\n    \"idempotencyKey\": \"78d452fe-3dfa-422b-9309-bd0b62ee044c\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transfers/c0222914-63e8-44ba-aeea-9119bdc470b3/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfers",
+                "c0222914-63e8-44ba-aeea-9119bdc470b3",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

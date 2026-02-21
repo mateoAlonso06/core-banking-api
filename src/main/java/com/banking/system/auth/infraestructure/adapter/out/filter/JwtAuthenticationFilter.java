@@ -1,6 +1,7 @@
 package com.banking.system.auth.infraestructure.adapter.out.filter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.banking.system.auth.domain.port.out.RolePermissionCachePort;
 import com.banking.system.auth.infraestructure.adapter.out.security.JwtTokenProvider;
 import com.banking.system.auth.infraestructure.config.SecurityConstants;
 import jakarta.servlet.FilterChain;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RolePermissionCachePort rolePermissionCache;
 
     @Override
     protected void doFilterInternal(
@@ -43,17 +46,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userIdStr = jwtTokenProvider.getUserIdFromToken(token);
                 UUID userId = UUID.fromString(userIdStr);
                 String role = jwtTokenProvider.getRoleFromToken(token);
-                List<String> permissions = jwtTokenProvider.getPermissionsFromToken(token);
+
+                // Load permissions dynamically from cache
+                Set<String> permissions = rolePermissionCache.getPermissionsForRole(role);
 
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 // Add role authority with ROLE_ prefix for hasRole() checks
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
                 // Add permission authorities for hasAuthority() checks
-                if (permissions != null) {
-                    permissions.forEach(perm ->
-                            authorities.add(new SimpleGrantedAuthority(perm))
-                    );
-                }
+                permissions.forEach(perm ->
+                        authorities.add(new SimpleGrantedAuthority(perm))
+                );
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, authorities);

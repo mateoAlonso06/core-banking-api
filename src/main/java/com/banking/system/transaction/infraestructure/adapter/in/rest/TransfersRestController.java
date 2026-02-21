@@ -64,7 +64,7 @@ public class TransfersRestController {
             @ApiResponse(responseCode = "404", description = "Transfer not found")
     })
     @PreAuthorize("hasAuthority('TRANSACTION_VIEW_OWN')")
-    @GetMapping("/me/{id}")
+    @GetMapping("/{id}/me")
     public ResponseEntity<TransferResult> getTransferByIdForCustomer(
             @Parameter(description = "Transfer ID to retrieve", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable @NotNull UUID id,

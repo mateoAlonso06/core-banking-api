@@ -86,8 +86,7 @@ public class AuthService implements
         String token = tokenGenerator.generateToken(
                 user.getId(),
                 user.getEmail().value(),
-                role.getName().name(),
-                role.getPermissionCodes()
+                role.getName().name()
         );
 
         return LoginResult.withToken(

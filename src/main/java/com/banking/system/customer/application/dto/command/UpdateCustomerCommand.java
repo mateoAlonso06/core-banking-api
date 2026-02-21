@@ -5,7 +5,5 @@ public record UpdateCustomerCommand(
         String lastName,
         String phone,
         String address,
-        String city,
-        String country
-) {
+        String city) {
 }
