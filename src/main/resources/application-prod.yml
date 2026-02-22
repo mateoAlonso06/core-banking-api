@@ -43,7 +43,13 @@ spring:
     clean-disabled: true
 
 server:
+  # Nginx reverse proxy support - trusts X-Forwarded-* headers from Nginx
+  forward-headers-strategy: framework
   tomcat:
+    # Identifies real client IP behind Nginx (for logs, rate limiting, audit)
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
     max-http-form-post-size: 1MB      # Limits form POST size (prevents large form attacks)
     max-swallow-size: 2MB             # Max bytes Tomcat swallows for aborted requests
     max-http-response-header-size: 8KB
@@ -55,10 +61,28 @@ logging:
     com.banking.system: INFO
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: never             # Hides internal health info from external users
-      show-components: never          # Prevents component enumeration
+      show-details: always            # Safe to show details - port is not public
+      show-components: always
+  health:
+    circuitbreakers:
+      enabled: true
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+    redis:
+      enabled: true
+    mail:
+      enabled: false                  # Avoid Gmail rate limits from health polling
+  tracing:
+    sampling:
+      probability: 0.1               # 10% sampling in prod (reduce overhead)
 
 # Swagger UI disabled in production - security best practice
 springdoc:

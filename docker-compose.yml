@@ -67,11 +67,16 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
 
+      # Management port - overrides dev profile (no port conflict inside Docker)
+      MANAGEMENT_SERVER_PORT: 9090
+
       # Observability
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
       LOKI_URL: http://loki:3100/loki/api/v1/push
     ports:
       - "${APP_PORT}:8080"
+    expose:
+      - "9090"              # Management port - only visible inside Docker network
     depends_on:
       postgres:
         condition: service_healthy
