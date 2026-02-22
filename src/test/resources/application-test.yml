@@ -48,12 +48,6 @@ jwt:
 cors:
   allowed-origins: "*"
 
-# Sobrescribimos ADMIN SEED (vacío para deshabilitar el seeder en tests)
-admin:
-  seed:
-    email: ""
-    password: ""
-
 # Desactivar logs ruidosos
 logging:
   level:

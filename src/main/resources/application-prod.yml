@@ -1,9 +1,9 @@
 spring:
   config:
-    import: "aws-parameterstore:/config/banking-system/"
+    import: "optional:aws-parameterstore:/config/banking-system/"
   datasource:
-    url: jdbc:postgresql://${AWS_DB_ENDPOINT}:${DB_PORT}/${DB_NAME}
-    username: ${AWS_DB_USERNAME}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
     password: ${spring.datasource.password}
     hikari:
       maximum-pool-size: 8
