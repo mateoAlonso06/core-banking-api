@@ -45,6 +45,10 @@ admin:
     email: ${ADMIN_SEED_EMAIL:}
     password: ${ADMIN_SEED_PASSWORD:}
 management:
+  # Actuator on separate port - isolated from public API, no auth needed
+  # Override with MANAGEMENT_SERVER_PORT env var if needed (e.g. port conflict)
+  server:
+    port: ${MANAGEMENT_SERVER_PORT:9090}
   endpoints:
     web:
       exposure:
@@ -52,8 +56,8 @@ management:
       base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized
-      show-components: when-authorized
+      show-details: always
+      show-components: always
   health:
     circuitbreakers:
       enabled: true

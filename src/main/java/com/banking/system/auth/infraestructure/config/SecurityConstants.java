@@ -8,7 +8,6 @@ public class SecurityConstants {
             "/api/v1/auth/resend-verification",
             "/api/v1/auth/2fa/verify",
             "/swagger-ui/**",
-            "/v3/api-docs/**",
-            "/actuator/**"
+            "/v3/api-docs/**"
     };
 }
