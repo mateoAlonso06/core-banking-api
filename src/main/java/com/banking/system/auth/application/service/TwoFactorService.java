@@ -6,6 +6,7 @@ import com.banking.system.auth.application.dto.result.LoginResult;
 import com.banking.system.auth.application.dto.result.TwoFactorRequiredResult;
 import com.banking.system.auth.application.dto.result.TwoFactorStatusResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
+import com.banking.system.auth.application.port.out.LoginTrackingPort;
 import com.banking.system.auth.application.usecase.GetTwoFactorStatusUseCase;
 import com.banking.system.auth.application.usecase.ToggleTwoFactorUseCase;
 import com.banking.system.auth.application.usecase.VerifyTwoFactorUseCase;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
@@ -39,6 +41,7 @@ public class TwoFactorService implements
     private final CustomerRepositoryPort customerRepository;
     private final TokenGenerator tokenGenerator;
     private final UserEventPublisher userEventPublisher;
+    private final LoginTrackingPort loginTrackingPort;
 
     @Override
     @Transactional
@@ -77,6 +80,8 @@ public class TwoFactorService implements
         User user = userRepository.findById(twoFactorCode.getUserId())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
+        Instant previousLogin = loginTrackingPort.registerLogin(user.getId());
+
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
                 user.getId(),
@@ -90,7 +95,8 @@ public class TwoFactorService implements
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),
-                token
+                token,
+                previousLogin
         );
     }
 

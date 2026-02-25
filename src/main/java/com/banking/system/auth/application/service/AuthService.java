@@ -14,12 +14,14 @@ import com.banking.system.auth.application.usecase.LoginUseCase;
 import com.banking.system.auth.application.usecase.RegisterUseCase;
 import com.banking.system.auth.domain.exception.*;
 import com.banking.system.auth.domain.model.*;
+import com.banking.system.auth.application.port.out.LoginTrackingPort;
 import com.banking.system.auth.domain.port.out.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Slf4j
@@ -37,6 +39,7 @@ public class AuthService implements
     private final TokenGenerator tokenGenerator;
     private final VerificationTokenRepositoryPort verificationTokenRepository;
     private final TwoFactorService twoFactorService;
+    private final LoginTrackingPort loginTrackingPort;
 
     public AuthService(
             UserRepositoryPort userRepository,
@@ -45,7 +48,8 @@ public class AuthService implements
             PasswordHasher passwordHasher,
             TokenGenerator tokenGenerator,
             VerificationTokenRepositoryPort verificationTokenRepository,
-            @Lazy TwoFactorService twoFactorService) {
+            @Lazy TwoFactorService twoFactorService,
+            LoginTrackingPort loginTrackingPort) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userEventPublisher = userEventPublisher;
@@ -53,6 +57,7 @@ public class AuthService implements
         this.tokenGenerator = tokenGenerator;
         this.verificationTokenRepository = verificationTokenRepository;
         this.twoFactorService = twoFactorService;
+        this.loginTrackingPort = loginTrackingPort;
     }
 
     @Override
@@ -82,6 +87,8 @@ public class AuthService implements
             );
         }
 
+        Instant previousLogin = loginTrackingPort.registerLogin(user.getId());
+
         Role role = user.getRole();
         String token = tokenGenerator.generateToken(
                 user.getId(),
@@ -93,7 +100,8 @@ public class AuthService implements
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),
-                token
+                token,
+                previousLogin
         );
     }
 
