@@ -77,7 +77,7 @@ public class TransferService implements TransferMoneyUseCase, GetTransferByIdUse
                 targetAccount,
                 command.category(),
                 toMoney(command.amount(), command.currency()),
-                new Description(command.description()),
+                command.description() != null ? new Description(command.description()) : null,
                 toFeeAmount(command),
                 idempotencyKey
         );

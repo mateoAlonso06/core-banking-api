@@ -35,6 +35,16 @@ spring:
   output:
     ansi:
       enabled: ALWAYS
+# 1. Informs Spring to trust Cloudflare headers (X-Forwarded-Proto)
+server:
+  forward-headers-strategy: native
+
+# 2. Forces Swagger to generate URLs with HTTPS
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS}
