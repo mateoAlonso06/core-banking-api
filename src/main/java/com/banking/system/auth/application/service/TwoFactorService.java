@@ -18,7 +18,6 @@ import com.banking.system.auth.domain.model.User;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
 import com.banking.system.auth.domain.port.out.TwoFactorCodeRepositoryPort;
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
-import com.banking.system.customer.domain.model.Customer;
 import com.banking.system.customer.domain.port.out.CustomerRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -20,8 +20,8 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
@@ -31,7 +31,7 @@ spring:
           starttls:
             enable: true
           ssl:
-            trust: smtp.gmail.com
+            trust: ${MAIL_HOST:smtp.gmail.com}
   output:
     ansi:
       enabled: ALWAYS
