@@ -6,11 +6,7 @@ import com.banking.system.account.application.dto.result.AccountPublicResult;
 import com.banking.system.account.application.dto.result.AccountResult;
 import com.banking.system.account.application.event.AccountCreatedEvent;
 import com.banking.system.account.application.event.publisher.AccountEventPublisher;
-import com.banking.system.account.application.usecase.CreateAccountUseCase;
-import com.banking.system.account.application.usecase.FindAccountByIdUseCase;
-import com.banking.system.account.application.usecase.FindAllAccountsByUserId;
-import com.banking.system.account.application.usecase.GetAccountBalanceUseCase;
-import com.banking.system.account.application.usecase.SearchAccountByAliasUseCase;
+import com.banking.system.account.application.usecase.*;
 import com.banking.system.account.domain.exception.AccountNotFoundException;
 import com.banking.system.account.domain.exception.AliasGenerationFailedException;
 import com.banking.system.account.domain.exception.InvalidAccountOwnerException;
@@ -80,7 +76,7 @@ public class AccountService implements
                 savedAccount.getId(),
                 savedAccount.getAccountNumber(),
                 customer.getId());
-
+        
         accountEventPublisher.publishAccountCreated(
                 new AccountCreatedEvent(
                         savedAccount.getId(),
@@ -88,9 +84,9 @@ public class AccountService implements
                         customer.getUserId(),
                         savedAccount.getCurrency().code(),
                         savedAccount.getBalance().getValue(),
-                        savedAccount.getAccountNumber(),
-                        savedAccount.getAlias(),
-                        savedAccount.getAccountType(),
+                        savedAccount.getAccountNumber().value(),
+                        savedAccount.getAlias().value(),
+                        savedAccount.getAccountType().name(),
                         savedAccount.getOpenedAt()
                 )
         );
