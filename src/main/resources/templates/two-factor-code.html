@@ -1,107 +1,105 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tu codigo de verificacion</title>
+    <title>Your verification code</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8FAFB;">
-<!-- Contenedor principal con tabla -->
-<table width="100%" border="0" cellspacing="0" cellpadding="20" style="background-color: #F8FAFB;">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+<table width="100%" border="0" cellspacing="0" cellpadding="40" style="background-color: #f8fafc;">
     <tr>
         <td align="center">
-            <!-- Container de 600px -->
             <table width="600" border="0" cellspacing="0" cellpadding="0"
-                   style="background-color: #FFFFFF; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                   style="background-color: #FFFFFF; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
 
                 <!-- Header -->
                 <tr>
-                    <td style="background-color: #0FA0B4; padding: 40px 30px; text-align: center; color: #FFFFFF;">
-                        <h1 style="font-size: 28px; margin: 0 0 10px 0; font-weight: 600;">Codigo de verificacion</h1>
-                        <p style="font-size: 16px; margin: 0; opacity: 0.95;">Core Bank System</p>
+                    <td style="background-color: #2563eb; padding: 44px 30px; text-align: center; color: #FFFFFF;">
+                        <h1 style="font-size: 26px; margin: 0 0 8px 0; font-weight: 700; letter-spacing: -0.3px;">Verification Code</h1>
+                        <p style="font-size: 15px; margin: 0; opacity: 0.9;">Open CoreBank</p>
                     </td>
                 </tr>
 
                 <!-- Content -->
                 <tr>
-                    <td style="padding: 40px 30px;">
-                        <p style="font-size: 18px; color: #222; margin: 0 0 20px 0;">
-                            Hola <strong th:text="${customerName}">Usuario</strong>,
+                    <td style="padding: 40px 36px;">
+                        <p style="font-size: 17px; color: #111827; margin: 0 0 20px 0;">
+                            Hi <strong th:text="${customerName}">User</strong>,
                         </p>
 
-                        <p style="font-size: 16px; color: #555; line-height: 1.6; margin: 0 0 30px 0;">
-                            Has solicitado iniciar sesion en tu cuenta de <strong>Core Bank System</strong>.
-                            Utiliza el siguiente codigo de verificacion para completar el proceso:
+                        <p style="font-size: 15px; color: #6b7280; line-height: 1.7; margin: 0 0 32px 0;">
+                            You've requested to sign in to your <strong style="color: #111827;">Open CoreBank</strong> account.
+                            Use the following verification code to complete the process:
                         </p>
 
                         <!-- 2FA Code Box -->
-                        <table width="100%" border="0" cellspacing="0" cellpadding="25"
-                               style="background-color: #F8FAFB; border-left: 4px solid #0FA0B4; border-radius: 5px; margin: 30px 0;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="24"
+                               style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; margin: 0 0 28px 0;">
                             <tr>
                                 <td align="center">
-                                    <p style="font-size: 14px; color: #666; margin: 0 0 10px 0; font-weight: 600;">Tu codigo de verificacion:</p>
-                                    <p style="font-size: 36px; color: #0FA0B4; margin: 0; font-weight: 700; letter-spacing: 8px; font-family: monospace;"
+                                    <p style="font-size: 12px; color: #6b7280; margin: 0 0 10px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your verification code</p>
+                                    <p style="font-size: 36px; color: #2563eb; margin: 0; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;"
                                        th:text="${twoFactorCode}">123456</p>
                                 </td>
                             </tr>
                         </table>
 
                         <!-- Info Box -->
-                        <table width="100%" border="0" cellspacing="0" cellpadding="15"
-                               style="background-color: #e8f7f9; border-left: 3px solid #0FA0B4; border-radius: 5px; margin: 20px 0;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="14"
+                               style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; margin: 0 0 16px 0;">
                             <tr>
                                 <td>
-                                    <p style="color: #0C7A8A; font-size: 14px; margin: 0;">
-                                        <strong>Importante:</strong> Este codigo expira en 5 minutos. Si no solicitaste
-                                        este codigo, alguien podria estar intentando acceder a tu cuenta.
+                                    <p style="color: #1e40af; font-size: 13px; margin: 0; line-height: 1.5;">
+                                        <strong>Important:</strong> This code expires in 5 minutes. If you did not request
+                                        this code, someone may be trying to access your account.
                                     </p>
                                 </td>
                             </tr>
                         </table>
 
                         <!-- Warning Box -->
-                        <table width="100%" border="0" cellspacing="0" cellpadding="15"
-                               style="background-color: #fff3cd; border-left: 3px solid #ffc107; border-radius: 5px; margin: 20px 0;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="14"
+                               style="background-color: #fef9c3; border: 1px solid #fde68a; border-radius: 8px; margin: 0 0 28px 0;">
                             <tr>
                                 <td>
-                                    <p style="color: #856404; font-size: 14px; margin: 0;">
-                                        <strong>Seguridad:</strong> Nunca compartas este codigo con nadie. Nuestro equipo
-                                        nunca te pedira tu codigo de verificacion.
+                                    <p style="color: #854d0e; font-size: 13px; margin: 0; line-height: 1.5;">
+                                        <strong>Security:</strong> Never share this code with anyone. Our team will
+                                        never ask you for your verification code.
                                     </p>
                                 </td>
                             </tr>
                         </table>
 
                         <!-- Divider -->
-                        <table width="100%" border="0" cellspacing="0" cellpadding="15">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="12">
                             <tr>
-                                <td style="height: 1px; background-color: #E0E0E0;"></td>
+                                <td style="height: 1px; background-color: #e5e7eb;"></td>
                             </tr>
                         </table>
 
-                        <p style="font-size: 14px; color: #888; line-height: 1.6; margin: 0;">
-                            Si no intentaste iniciar sesion, te recomendamos cambiar tu contrasena inmediatamente
-                            y contactar a nuestro equipo de soporte.
+                        <p style="font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0;">
+                            If you did not attempt to sign in, we recommend changing your password immediately
+                            and contacting our support team.
                         </p>
                     </td>
                 </tr>
 
                 <!-- Footer -->
                 <tr>
-                    <td style="background-color: #F8FAFB; padding: 30px; text-align: center; color: #888; font-size: 13px; line-height: 1.6;">
-                        <p style="margin: 0 0 5px 0;"><strong>Core Banking System</strong></p>
-                        <p style="margin: 0 0 15px 0;">Tu banco digital de confianza</p>
-                        <p style="margin: 0 0 15px 0;">
-                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Terminos de Servicio</a> |
-                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Politica de Privacidad</a> |
-                            <a href="#" style="color: #0FA0B4; text-decoration: none;">Contacto</a>
+                    <td style="background-color: #f8fafc; padding: 28px 36px; text-align: center; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                        <p style="margin: 0 0 4px 0; color: #6b7280; font-weight: 600;">Open CoreBank</p>
+                        <p style="margin: 0 0 14px 0;">Your trusted digital bank</p>
+                        <p style="margin: 0 0 14px 0;">
+                            <a href="#" style="color: #2563eb; text-decoration: none;">Terms of Service</a> &nbsp;&bull;&nbsp;
+                            <a href="#" style="color: #2563eb; text-decoration: none;">Privacy Policy</a> &nbsp;&bull;&nbsp;
+                            <a href="#" style="color: #2563eb; text-decoration: none;">Contact</a>
                         </p>
-                        <p style="margin: 0 0 10px 0;">
-                            &copy; <span th:text="${#dates.year(#dates.createNow())}">2026</span> Core Banking System.
-                            Todos los derechos reservados.
+                        <p style="margin: 0 0 8px 0;">
+                            &copy; <span th:text="${#dates.year(#dates.createNow())}">2026</span> Open CoreBank.
+                            All rights reserved.
                         </p>
-                        <p style="color: #aaa; font-size: 12px; margin: 0;">
-                            Este es un correo automatico, por favor no responder.
+                        <p style="color: #d1d5db; font-size: 11px; margin: 0;">
+                            This is an automated email, please do not reply.
                         </p>
                     </td>
                 </tr>
