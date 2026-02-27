@@ -1,6 +1,7 @@
 package com.banking.system.auth.application.dto.result;
 
 import com.banking.system.auth.domain.model.RoleName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -10,7 +11,7 @@ public record LoginResult(
         String email,
         RoleName role,
         String token,
-        String refreshToken,
+        @JsonIgnore String refreshToken,
         boolean requiresTwoFactor,
         TwoFactorRequiredResult twoFactorData,
         Instant lastLoginAt

@@ -8,14 +8,17 @@ import com.banking.system.auth.application.dto.result.TwoFactorStatusResult;
 import com.banking.system.auth.application.usecase.*;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.*;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.response.TwoFactorStatusResponse;
+import com.banking.system.auth.infraestructure.config.CookieHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,6 +44,7 @@ public class AuthRestController {
     private final GetTwoFactorStatusUseCase getTwoFactorStatusUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final CookieHelper cookieHelper;
 
     @Operation(
             summary = "Register new user",
@@ -60,7 +64,8 @@ public class AuthRestController {
 
     @Operation(
             summary = "User login",
-            description = "Authenticates user with email and password. Returns JWT token on success."
+            description = "Authenticates user with email and password. Returns JWT token on success. " +
+                    "The refresh token is set as an HttpOnly cookie."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful, JWT token returned"),
@@ -72,7 +77,12 @@ public class AuthRestController {
     @PostMapping("/login")
     public ResponseEntity<LoginResult> login(@RequestBody @Valid LoginRequest request) {
         var result = loginUseCase.login(request.toCommand());
-        return ResponseEntity.ok(result);
+
+        if (result.requiresTwoFactor()) {
+            return ResponseEntity.ok(result);
+        }
+
+        return buildResponseWithCookies(result);
     }
 
     @Operation(
@@ -128,7 +138,8 @@ public class AuthRestController {
 
     @Operation(
             summary = "Verify two-factor authentication code",
-            description = "Verifies the 2FA code and returns JWT token on success. Use the session token received from login response."
+            description = "Verifies the 2FA code and returns JWT token on success. " +
+                    "The refresh token is set as an HttpOnly cookie."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "2FA verification successful, JWT token returned"),
@@ -139,7 +150,7 @@ public class AuthRestController {
     @PostMapping("/2fa/verify")
     public ResponseEntity<LoginResult> verifyTwoFactor(@RequestBody @Valid VerifyTwoFactorRequest request) {
         var result = verifyTwoFactorUseCase.verify(request.toCommand());
-        return ResponseEntity.ok(result);
+        return buildResponseWithCookies(result);
     }
 
     @Operation(
@@ -183,31 +194,51 @@ public class AuthRestController {
 
     @Operation(
             summary = "Refresh access token",
-            description = "Issues a new access token using a valid refresh token. The old refresh token is revoked and a new one is returned (rotation)."
+            description = "Issues a new access token using the refresh token from the HttpOnly cookie. " +
+                    "The old refresh token is revoked and a new one is set as a cookie (rotation)."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "New access and refresh tokens returned"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "401", description = "Refresh token is invalid, expired, or revoked")
+            @ApiResponse(responseCode = "200", description = "New access token returned, refresh token cookie rotated"),
+            @ApiResponse(responseCode = "401", description = "Refresh token is missing, invalid, expired, or revoked"),
+            @ApiResponse(responseCode = "403", description = "Missing or invalid CSRF token")
     })
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResult> refresh(@RequestBody @Valid RefreshTokenRequest request) {
-        var result = refreshTokenUseCase.refresh(request.refreshToken());
-        return ResponseEntity.ok(result);
+    public ResponseEntity<LoginResult> refresh(HttpServletRequest request) {
+        String refreshToken = cookieHelper.extractRefreshToken(request)
+                .orElse(null);
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        var result = refreshTokenUseCase.refresh(refreshToken);
+        return buildResponseWithCookies(result);
     }
 
     @Operation(
             summary = "Logout",
-            description = "Revokes the refresh token, ending the session. The access token expires naturally."
+            description = "Revokes the refresh token from the HttpOnly cookie, ending the session. " +
+                    "The access token expires naturally."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Logged out successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "401", description = "Refresh token not found")
+            @ApiResponse(responseCode = "403", description = "Missing or invalid CSRF token")
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshTokenRequest request) {
-        logoutUseCase.logout(request.refreshToken());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        cookieHelper.extractRefreshToken(request)
+                .ifPresent(logoutUseCase::logout);
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookieHelper.clearRefreshTokenCookie().toString())
+                .header(HttpHeaders.SET_COOKIE, cookieHelper.clearCsrfTokenCookie().toString())
+                .build();
+    }
+
+    private ResponseEntity<LoginResult> buildResponseWithCookies(LoginResult result) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieHelper.createRefreshTokenCookie(result.refreshToken()).toString())
+                .header(HttpHeaders.SET_COOKIE, cookieHelper.createCsrfTokenCookie().toString())
+                .body(result);
     }
 }

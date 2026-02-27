@@ -1,5 +1,6 @@
 package com.banking.system.auth.infraestructure.config;
 
+import com.banking.system.auth.infraestructure.adapter.out.filter.CsrfTokenFilter;
 import com.banking.system.auth.infraestructure.adapter.out.filter.JwtAuthenticationFilter;
 import com.banking.system.auth.infraestructure.adapter.out.filter.RateLimitFilter;
 import com.banking.system.common.infraestructure.filter.CorrelationIdFilter;
@@ -41,6 +42,7 @@ public class SecurityConfig {
     private String cspPolicy;
 
     private final CorrelationIdFilter correlationIdFilter;
+    private final CsrfTokenFilter csrfTokenFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<RateLimitFilter> rateLimitFilterProvider;
 
@@ -96,6 +98,8 @@ public class SecurityConfig {
         return httpSecurity
                 // CorrelationId filter FIRST - ensures all subsequent filters and logs have the correlation ID
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                // CSRF filter BEFORE JWT - rejects invalid CSRF before authentication
+                .addFilterBefore(csrfTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -111,7 +115,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // For: JWT; JSON/XML; Content negotiation; AJAX requests; Request tracing
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "X-Correlation-ID"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "X-Correlation-ID", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);
         // Expose headers that client-side JavaScript can read from responses
         configuration.setExposedHeaders(List.of("Authorization", "X-Correlation-ID"));
