@@ -1,6 +1,7 @@
 package com.banking.system.account.domain.port.out;
 
 import com.banking.system.account.domain.model.Account;
+import com.banking.system.account.domain.model.AccountType;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,7 @@ public interface AccountRepositoryPort {
 
     boolean existsByAlias(String alias);
 
-    boolean existsUsdAccount(UUID customerId);
+    boolean existsByCustomerIdAndTypeAndCurrency(UUID customerId, AccountType accountType, String currency);
 
     List<Account> findAllByCustomerId(UUID customerId);
 

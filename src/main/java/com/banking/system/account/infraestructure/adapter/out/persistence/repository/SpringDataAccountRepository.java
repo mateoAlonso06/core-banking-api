@@ -1,5 +1,6 @@
 package com.banking.system.account.infraestructure.adapter.out.persistence.repository;
 
+import com.banking.system.account.domain.model.AccountType;
 import com.banking.system.account.infraestructure.adapter.out.persistence.entity.AccountJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface SpringDataAccountRepository extends JpaRepository<AccountJpaEntity, UUID> {
-    boolean existsByCustomerIdAndCurrency(UUID customerId, String currency);
+    boolean existsByCustomerIdAndAccountTypeAndCurrency(UUID customerId, AccountType accountType, String currency);
 
     Optional<AccountJpaEntity> findByAlias(String alias);
 

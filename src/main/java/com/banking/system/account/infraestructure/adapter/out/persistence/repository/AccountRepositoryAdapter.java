@@ -1,6 +1,7 @@
 package com.banking.system.account.infraestructure.adapter.out.persistence.repository;
 
 import com.banking.system.account.domain.model.Account;
+import com.banking.system.account.domain.model.AccountType;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.account.infraestructure.adapter.out.mapper.AccountJpaMapper;
 import lombok.RequiredArgsConstructor;
@@ -49,8 +50,8 @@ public class AccountRepositoryAdapter implements AccountRepositoryPort {
     }
 
     @Override
-    public boolean existsUsdAccount(UUID customerId) {
-        return springDataAccountRepository.existsByCustomerIdAndCurrency(customerId, "USD");
+    public boolean existsByCustomerIdAndTypeAndCurrency(UUID customerId, AccountType accountType, String currency) {
+        return springDataAccountRepository.existsByCustomerIdAndAccountTypeAndCurrency(customerId, accountType, currency);
     }
 
     @Override

@@ -107,7 +107,7 @@ public class Customer {
     /**
      * Creates a new Customer with default values for certain fields.
      * <p>
-     * Sets the customerSince field to the current date, KYC status to PENDING, and risk level to LOW.
+     * Sets the customerSince field to the current date, KYC status to APPROVED, and risk level to LOW.
      *
      * @param userId           the unique identifier of the associated user
      * @param personName       the person's name
@@ -134,9 +134,9 @@ public class Customer {
                 phone,
                 address,
                 LocalDate.now(),
-                KycStatus.PENDING,
+                KycStatus.APPROVED,
                 RiskLevel.LOW,
-                null
+                Instant.now()
         );
     }
 

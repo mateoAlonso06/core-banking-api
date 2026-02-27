@@ -7,6 +7,7 @@ import com.banking.system.account.application.dto.result.AccountResult;
 import com.banking.system.account.application.event.AccountCreatedEvent;
 import com.banking.system.account.application.event.publisher.AccountEventPublisher;
 import com.banking.system.account.application.usecase.*;
+import com.banking.system.account.domain.exception.AccountAlreadyExistsException;
 import com.banking.system.account.domain.exception.AccountNotFoundException;
 import com.banking.system.account.domain.exception.AliasGenerationFailedException;
 import com.banking.system.account.domain.exception.InvalidAccountOwnerException;
@@ -56,11 +57,11 @@ public class AccountService implements
             throw new IllegalStateException("Customer with ID " + customer.getId() + " has not completed KYC.");
         }
 
-        if (command.currency().equals("USD")) {
-            if (accountRepositoryPort.existsUsdAccount(customer.getId())) {
-                log.debug("USD acount already exists for customer: {}", customer.getId());
-                throw new IllegalStateException("Users are only allowed to have one USD account.");
-            }
+        if (accountRepositoryPort.existsByCustomerIdAndTypeAndCurrency(customer.getId(), command.accountType(), command.currency())) {
+            log.debug("Account already exists for customer={}, type={}, currency={}", customer.getId(), command.accountType(), command.currency());
+            throw new AccountAlreadyExistsException(
+                    "Customer already has a " + command.accountType() + " account in " + command.currency()
+            );
         }
 
         // The alias has more potential for collisions, so we generate and check it in a loop
