@@ -8,10 +8,7 @@ import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.dto.result.TwoFactorRequiredResult;
 import com.banking.system.auth.application.dto.result.UserResult;
 import com.banking.system.auth.application.event.publisher.UserEventPublisher;
-import com.banking.system.auth.application.usecase.ChangePasswordUseCase;
-import com.banking.system.auth.application.usecase.FindUserByIdUseCase;
-import com.banking.system.auth.application.usecase.LoginUseCase;
-import com.banking.system.auth.application.usecase.RegisterUseCase;
+import com.banking.system.auth.application.usecase.*;
 import com.banking.system.auth.domain.exception.*;
 import com.banking.system.auth.domain.model.*;
 import com.banking.system.auth.application.port.out.LoginTrackingPort;
@@ -30,7 +27,9 @@ public class AuthService implements
         RegisterUseCase,
         LoginUseCase,
         FindUserByIdUseCase,
-        ChangePasswordUseCase {
+        ChangePasswordUseCase,
+        RefreshTokenUseCase,
+        LogoutUseCase {
 
     private final UserRepositoryPort userRepository;
     private final RoleRepositoryPort roleRepository;
@@ -40,6 +39,7 @@ public class AuthService implements
     private final VerificationTokenRepositoryPort verificationTokenRepository;
     private final TwoFactorService twoFactorService;
     private final LoginTrackingPort loginTrackingPort;
+    private final RefreshTokenRepositoryPort refreshTokenRepository;
 
     public AuthService(
             UserRepositoryPort userRepository,
@@ -49,7 +49,8 @@ public class AuthService implements
             TokenGenerator tokenGenerator,
             VerificationTokenRepositoryPort verificationTokenRepository,
             @Lazy TwoFactorService twoFactorService,
-            LoginTrackingPort loginTrackingPort) {
+            LoginTrackingPort loginTrackingPort,
+            RefreshTokenRepositoryPort refreshTokenRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userEventPublisher = userEventPublisher;
@@ -58,6 +59,7 @@ public class AuthService implements
         this.verificationTokenRepository = verificationTokenRepository;
         this.twoFactorService = twoFactorService;
         this.loginTrackingPort = loginTrackingPort;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Override
@@ -90,19 +92,76 @@ public class AuthService implements
         Instant previousLogin = loginTrackingPort.registerLogin(user.getId());
 
         Role role = user.getRole();
-        String token = tokenGenerator.generateToken(
+        String accessToken = tokenGenerator.generateToken(
                 user.getId(),
                 user.getEmail().value(),
                 role.getName().name()
         );
 
+        RefreshToken refreshToken = RefreshToken.createNew(user.getId());
+        refreshTokenRepository.save(refreshToken);
+
         return LoginResult.withToken(
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),
-                token,
+                accessToken,
+                refreshToken.getToken(),
                 previousLogin
         );
+    }
+
+    @Override
+    @Transactional
+    public LoginResult refresh(String rawToken) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(rawToken)
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+
+        if (refreshToken.isRevoked())
+            throw new InvalidRefreshTokenException("Refresh token has been revoked");
+
+        if (refreshToken.isExpired())
+            throw new InvalidRefreshTokenException("Refresh token has expired");
+
+        User user = userRepository.findById(refreshToken.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Rotation: revoke the used token and issue a new one
+        refreshToken.revoke();
+        refreshTokenRepository.save(refreshToken);
+
+        Role role = user.getRole();
+        String newAccessToken = tokenGenerator.generateToken(
+                user.getId(),
+                user.getEmail().value(),
+                role.getName().name()
+        );
+
+        RefreshToken newRefreshToken = RefreshToken.createNew(user.getId());
+        refreshTokenRepository.save(newRefreshToken);
+
+        log.info("Refresh token rotated for user: {}", user.getId());
+
+        return LoginResult.withToken(
+                user.getId(),
+                user.getEmail().value(),
+                role.getName(),
+                newAccessToken,
+                newRefreshToken.getToken(),
+                null
+        );
+    }
+
+    @Override
+    @Transactional
+    public void logout(String rawToken) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(rawToken)
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+
+        refreshToken.revoke();
+        refreshTokenRepository.save(refreshToken);
+
+        log.info("User {} logged out, refresh token revoked", refreshToken.getUserId());
     }
 
     @Override

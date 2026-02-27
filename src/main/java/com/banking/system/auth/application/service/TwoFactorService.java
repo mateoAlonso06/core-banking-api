@@ -15,6 +15,8 @@ import com.banking.system.auth.domain.exception.UserNotFoundException;
 import com.banking.system.auth.domain.model.Role;
 import com.banking.system.auth.domain.model.TwoFactorCode;
 import com.banking.system.auth.domain.model.User;
+import com.banking.system.auth.domain.model.RefreshToken;
+import com.banking.system.auth.domain.port.out.RefreshTokenRepositoryPort;
 import com.banking.system.auth.domain.port.out.TokenGenerator;
 import com.banking.system.auth.domain.port.out.TwoFactorCodeRepositoryPort;
 import com.banking.system.auth.domain.port.out.UserRepositoryPort;
@@ -41,6 +43,7 @@ public class TwoFactorService implements
     private final TokenGenerator tokenGenerator;
     private final UserEventPublisher userEventPublisher;
     private final LoginTrackingPort loginTrackingPort;
+    private final RefreshTokenRepositoryPort refreshTokenRepository;
 
     @Override
     @Transactional
@@ -82,11 +85,14 @@ public class TwoFactorService implements
         Instant previousLogin = loginTrackingPort.registerLogin(user.getId());
 
         Role role = user.getRole();
-        String token = tokenGenerator.generateToken(
+        String accessToken = tokenGenerator.generateToken(
                 user.getId(),
                 user.getEmail().value(),
                 role.getName().name()
         );
+
+        RefreshToken refreshToken = RefreshToken.createNew(user.getId());
+        refreshTokenRepository.save(refreshToken);
 
         log.info("2FA verification successful for user: {}", user.getId());
 
@@ -94,7 +100,8 @@ public class TwoFactorService implements
                 user.getId(),
                 user.getEmail().value(),
                 role.getName(),
-                token,
+                accessToken,
+                refreshToken.getToken(),
                 previousLogin
         );
     }

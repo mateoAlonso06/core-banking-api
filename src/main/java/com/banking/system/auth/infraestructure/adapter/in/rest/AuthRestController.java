@@ -7,6 +7,7 @@ import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.dto.result.TwoFactorStatusResult;
 import com.banking.system.auth.application.usecase.*;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.*;
+import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.RefreshTokenRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.response.TwoFactorStatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +40,8 @@ public class AuthRestController {
     private final VerifyTwoFactorUseCase verifyTwoFactorUseCase;
     private final ToggleTwoFactorUseCase toggleTwoFactorUseCase;
     private final GetTwoFactorStatusUseCase getTwoFactorStatusUseCase;
+    private final RefreshTokenUseCase refreshTokenUseCase;
+    private final LogoutUseCase logoutUseCase;
 
     @Operation(
             summary = "Register new user",
@@ -177,5 +180,35 @@ public class AuthRestController {
             @Parameter(hidden = true) @AuthenticationPrincipal UUID userId) {
         TwoFactorStatusResult result = getTwoFactorStatusUseCase.getStatus(userId);
         return ResponseEntity.ok(new TwoFactorStatusResponse(result.enabled()));
+    }
+
+    @Operation(
+            summary = "Refresh access token",
+            description = "Issues a new access token using a valid refresh token. The old refresh token is revoked and a new one is returned (rotation)."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "New access and refresh tokens returned"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Refresh token is invalid, expired, or revoked")
+    })
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResult> refresh(@RequestBody @Valid RefreshTokenRequest request) {
+        var result = refreshTokenUseCase.refresh(request.refreshToken());
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "Logout",
+            description = "Revokes the refresh token, ending the session. The access token expires naturally."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Logged out successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Refresh token not found")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshTokenRequest request) {
+        logoutUseCase.logout(request.refreshToken());
+        return ResponseEntity.noContent().build();
     }
 }

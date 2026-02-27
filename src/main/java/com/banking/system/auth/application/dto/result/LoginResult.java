@@ -10,15 +10,16 @@ public record LoginResult(
         String email,
         RoleName role,
         String token,
+        String refreshToken,
         boolean requiresTwoFactor,
         TwoFactorRequiredResult twoFactorData,
         Instant lastLoginAt
 ) {
-    public static LoginResult withToken(UUID id, String email, RoleName role, String token, Instant lastLoginAt) {
-        return new LoginResult(id, email, role, token, false, null, lastLoginAt);
+    public static LoginResult withToken(UUID id, String email, RoleName role, String token, String refreshToken, Instant lastLoginAt) {
+        return new LoginResult(id, email, role, token, refreshToken, false, null, lastLoginAt);
     }
 
     public static LoginResult withTwoFactorRequired(UUID id, String email, TwoFactorRequiredResult twoFactorData) {
-        return new LoginResult(id, email, null, null, true, twoFactorData, null);
+        return new LoginResult(id, email, null, null, null, true, twoFactorData, null);
     }
 }
