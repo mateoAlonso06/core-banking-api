@@ -6,19 +6,38 @@
     <!-- Property for correlation ID pattern -->
     <property name="CORRELATION_PATTERN" value="[%X{correlationId:-NO-CORRELATION-ID}]"/>
 
-    <!-- Loki URL (from environment variable) -->
+    <!-- Properties from Spring config -->
     <springProperty scope="context" name="LOKI_URL" source="loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="core-bank"/>
 
-    <!-- Development profile (default) -->
-    <springProfile name="dev,default">
+    <!-- ================================================================ -->
+    <!-- Dev/Default WITHOUT observability: human-readable console only   -->
+    <!-- ================================================================ -->
+    <springProfile name="(dev | default) &amp; !observability">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
                 <pattern>%cyan(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green(${CORRELATION_PATTERN}) %magenta([%X{traceId:-},%X{spanId:-}]) %highlight(%-5level) %cyan(%logger{36}) %gray(-) %msg%n</pattern>
             </encoder>
         </appender>
 
-        <!-- Loki appender for dev (optional - silently fails if service unavailable) -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    </springProfile>
+
+    <!-- ================================================================ -->
+    <!-- Dev/Default WITH observability: console + Loki                   -->
+    <!-- ================================================================ -->
+    <springProfile name="(dev | default) &amp; observability">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%cyan(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green(${CORRELATION_PATTERN}) %magenta([%X{traceId:-},%X{spanId:-}]) %highlight(%-5level) %cyan(%logger{36}) %gray(-) %msg%n</pattern>
+            </encoder>
+        </appender>
+
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
             <http>
                 <url>${LOKI_URL}</url>
@@ -28,25 +47,12 @@
                     <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,profile=dev</pattern>
                 </label>
                 <message>
-                    <pattern>
-                        {
-                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
-                        "level": "%level",
-                        "thread": "%thread",
-                        "logger": "%logger{36}",
-                        "message": "%msg",
-                        "correlationId": "%X{correlationId:-NO-ID}",
-                        "traceId": "%X{traceId:-}",
-                        "spanId": "%X{spanId:-}"
-                        }
-                    </pattern>
+                    <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","level":"%level","thread":"%thread","logger":"%logger{36}","message":"%msg","correlationId":"%X{correlationId:-NO-ID}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}"}</pattern>
                 </message>
             </format>
-            <!-- Fail silently if Loki is not available -->
             <dropRateLimitedEvents>true</dropRateLimitedEvents>
         </appender>
 
-        <!-- Async wrapper for Loki to prevent blocking on failures -->
         <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
             <appender-ref ref="LOKI"/>
             <neverBlock>true</neverBlock>
@@ -59,25 +65,40 @@
             <appender-ref ref="ASYNC_LOKI"/>
         </root>
 
-        <!-- Show SQL queries in dev -->
         <logger name="org.hibernate.SQL" level="DEBUG"/>
         <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
-
-        <!-- Silence monitoring service connection errors -->
         <logger name="com.github.loki4j" level="ERROR"/>
         <logger name="zipkin2.reporter" level="ERROR"/>
     </springProfile>
 
-    <!-- Production profile -->
-    <springProfile name="prod">
+    <!-- ================================================================ -->
+    <!-- Prod WITHOUT observability: JSON console only                    -->
+    <!-- ================================================================ -->
+    <springProfile name="prod &amp; !observability">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <!-- JSON format for production -->
                 <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","correlationId":"%X{correlationId:-NO-ID}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n</pattern>
             </encoder>
         </appender>
 
-        <!-- Loki appender for production (optional - silently fails if service unavailable) -->
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.banking.system" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+    </springProfile>
+
+    <!-- ================================================================ -->
+    <!-- Prod WITH observability: JSON console + Loki                     -->
+    <!-- ================================================================ -->
+    <springProfile name="prod &amp; observability">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","correlationId":"%X{correlationId:-NO-ID}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","level":"%-5level","logger":"%logger{36}","message":"%msg"}%n</pattern>
+            </encoder>
+        </appender>
+
         <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
             <http>
                 <url>${LOKI_URL}</url>
@@ -87,25 +108,12 @@
                     <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level,profile=prod</pattern>
                 </label>
                 <message>
-                    <pattern>
-                        {
-                        "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
-                        "level": "%level",
-                        "thread": "%thread",
-                        "logger": "%logger{36}",
-                        "message": "%msg",
-                        "correlationId": "%X{correlationId:-NO-ID}",
-                        "traceId": "%X{traceId:-}",
-                        "spanId": "%X{spanId:-}"
-                        }
-                    </pattern>
+                    <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","level":"%level","thread":"%thread","logger":"%logger{36}","message":"%msg","correlationId":"%X{correlationId:-NO-ID}","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}"}</pattern>
                 </message>
             </format>
-            <!-- Fail silently if Loki is not available -->
             <dropRateLimitedEvents>true</dropRateLimitedEvents>
         </appender>
 
-        <!-- Async wrapper for Loki to prevent blocking on failures -->
         <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
             <appender-ref ref="LOKI"/>
             <neverBlock>true</neverBlock>
@@ -118,14 +126,10 @@
             <appender-ref ref="ASYNC_LOKI"/>
         </root>
 
-        <!-- Application logs at INFO level in production -->
         <logger name="com.banking.system" level="INFO"/>
-
-        <!-- Hide SQL queries in production -->
         <logger name="org.hibernate.SQL" level="WARN"/>
-
-        <!-- Silence monitoring service connection errors -->
         <logger name="com.github.loki4j" level="ERROR"/>
         <logger name="zipkin2.reporter" level="ERROR"/>
     </springProfile>
+
 </configuration>

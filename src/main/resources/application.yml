@@ -79,6 +79,7 @@ management:
     tags:
       application: core-bank
   tracing:
+    enabled: ${TRACING_ENABLED:false}  # Enable only when observability stack is running
     sampling:
       probability: 1.0  # 100% sampling for dev, adjust in prod
   zipkin:

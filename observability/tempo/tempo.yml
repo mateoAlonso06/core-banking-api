@@ -1,3 +1,5 @@
+target: scalable-single-binary
+
 stream_over_http_enabled: true
 
 server:
