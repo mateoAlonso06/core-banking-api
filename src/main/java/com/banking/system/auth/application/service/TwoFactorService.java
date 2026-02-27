@@ -87,7 +87,6 @@ public class TwoFactorService implements
         Role role = user.getRole();
         String accessToken = tokenGenerator.generateToken(
                 user.getId(),
-                user.getEmail().value(),
                 role.getName().name()
         );
 

@@ -25,13 +25,12 @@ public class JwtTokenProvider {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    public String generateToken(String userId, String email, String role) {
+    public String generateToken(String userId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         return JWT.create()
                 .withSubject(userId)
-                .withClaim("email", email)
                 .withClaim("role", role)
                 .withIssuedAt(now)
                 .withExpiresAt(expiryDate)

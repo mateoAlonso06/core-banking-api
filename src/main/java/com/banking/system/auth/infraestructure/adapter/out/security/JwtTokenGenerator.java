@@ -12,7 +12,7 @@ public class JwtTokenGenerator implements TokenGenerator {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public String generateToken(UUID userId, String email, String role) {
-        return jwtTokenProvider.generateToken(userId.toString(), email, role);
+    public String generateToken(UUID userId, String role) {
+        return jwtTokenProvider.generateToken(userId.toString(), role);
     }
 }

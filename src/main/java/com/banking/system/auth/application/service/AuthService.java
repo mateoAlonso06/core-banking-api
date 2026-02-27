@@ -94,7 +94,6 @@ public class AuthService implements
         Role role = user.getRole();
         String accessToken = tokenGenerator.generateToken(
                 user.getId(),
-                user.getEmail().value(),
                 role.getName().name()
         );
 
@@ -136,7 +135,6 @@ public class AuthService implements
         Role role = user.getRole();
         String newAccessToken = tokenGenerator.generateToken(
                 user.getId(),
-                user.getEmail().value(),
                 role.getName().name()
         );
 

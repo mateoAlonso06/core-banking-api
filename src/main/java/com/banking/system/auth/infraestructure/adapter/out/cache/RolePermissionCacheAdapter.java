@@ -28,7 +28,7 @@ public class RolePermissionCacheAdapter implements RolePermissionCachePort {
         try {
             RoleName roleNameEnum = RoleName.valueOf(roleName);
             return roleRepository.findByName(roleNameEnum)
-                    .map(Role::getPermissionCodes)
+                    .map(Role::getPermissionCodes) // Eager fetch permissions when loading the role
                     .orElse(Collections.emptySet());
         } catch (IllegalArgumentException e) {
             log.warn("Invalid role name: {}", roleName);
