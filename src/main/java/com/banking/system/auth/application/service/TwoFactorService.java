@@ -91,6 +91,9 @@ public class TwoFactorService implements
                 role.getName().name()
         );
 
+        // Single-session policy: revoke any existing sessions before issuing a new one
+        refreshTokenRepository.revokeAllByUserId(user.getId());
+
         RefreshToken refreshToken = RefreshToken.createNew(user.getId());
         refreshTokenRepository.save(refreshToken);
 

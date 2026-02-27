@@ -6,8 +6,11 @@ import com.banking.system.auth.infraestructure.adapter.out.mapper.RefreshTokenJp
 import com.banking.system.auth.infraestructure.adapter.out.persistence.entity.RefreshTokenJpaEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -26,5 +29,17 @@ public class RefreshTokenRepositoryAdapter implements RefreshTokenRepositoryPort
     public Optional<RefreshToken> findByToken(String token) {
         return springRefreshTokenJpaRepository.findByToken(token)
                 .map(RefreshTokenJpaMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public void revokeAllByUserId(UUID userId) {
+        springRefreshTokenJpaRepository.revokeAllByUserId(userId);
+    }
+
+    @Override
+    @Transactional
+    public int deleteExpiredOrRevoked() {
+        return springRefreshTokenJpaRepository.deleteExpiredOrRevoked(Instant.now());
     }
 }

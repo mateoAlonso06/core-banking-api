@@ -7,7 +7,6 @@ import com.banking.system.auth.application.dto.result.RegisterResult;
 import com.banking.system.auth.application.dto.result.TwoFactorStatusResult;
 import com.banking.system.auth.application.usecase.*;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.*;
-import com.banking.system.auth.infraestructure.adapter.in.rest.dto.request.RefreshTokenRequest;
 import com.banking.system.auth.infraestructure.adapter.in.rest.dto.response.TwoFactorStatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

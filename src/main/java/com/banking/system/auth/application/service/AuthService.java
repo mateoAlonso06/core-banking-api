@@ -98,6 +98,9 @@ public class AuthService implements
                 role.getName().name()
         );
 
+        // Single-session policy: revoke any existing sessions before issuing a new one
+        refreshTokenRepository.revokeAllByUserId(user.getId());
+
         RefreshToken refreshToken = RefreshToken.createNew(user.getId());
         refreshTokenRepository.save(refreshToken);
 
@@ -155,13 +158,15 @@ public class AuthService implements
     @Override
     @Transactional
     public void logout(String rawToken) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(rawToken)
-                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
-
-        refreshToken.revoke();
-        refreshTokenRepository.save(refreshToken);
-
-        log.info("User {} logged out, refresh token revoked", refreshToken.getUserId());
+        // If the token no longer exists (already cleaned up by the scheduled job),
+        // the session is already terminated — treat it as a successful logout.
+        refreshTokenRepository.findByToken(rawToken).ifPresent(refreshToken -> {
+            if (!refreshToken.isRevoked()) {
+                refreshToken.revoke();
+                refreshTokenRepository.save(refreshToken);
+                log.info("User {} logged out, refresh token revoked", refreshToken.getUserId());
+            }
+        });
     }
 
     @Override
