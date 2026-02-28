@@ -163,7 +163,8 @@ public class Customer {
     public void updatePersonName(PersonName newName) {
         Objects.requireNonNull(newName, "newName must not be null");
         this.personName = newName;
-        this.kycStatus = KycStatus.PENDING;
+        //For simplicity, we assume that any change in the person's name requires a new KYC verification.
+        //this.kycStatus = KycStatus.PENDING;
     }
 
     public void updatePhone(Phone newPhone) {

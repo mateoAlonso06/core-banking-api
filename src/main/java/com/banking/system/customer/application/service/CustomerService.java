@@ -72,6 +72,7 @@ public class CustomerService implements
     @Transactional
     public void createCustomer(CreateCustomerCommand command) {
         log.info("Creating customer with userId: {}", command.userId());
+
         // Ensures idempotency based on userId
         if (customerRepository.existsByUserId(command.userId())) {
             log.warn("Customer already exists for userId: {}", command.userId());
