@@ -8,12 +8,12 @@ A backend core banking system built with **Java 21** and **Spring Boot 3.5**, fo
 - [Architecture](#architecture)
 - [Modules](#modules)
 - [API Endpoints](#api-endpoints)
+- [Observability](#observability)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Database Migrations](#database-migrations)
 - [Testing](#testing)
 - [Project Structure](#project-structure)
-- [License](#license)
 
 ## Tech Stack
 
@@ -23,16 +23,17 @@ A backend core banking system built with **Java 21** and **Spring Boot 3.5**, fo
 | Framework | Spring Boot 3.5.9 |
 | Security | Spring Security 6, JWT (java-jwt 4.5.0), BCrypt |
 | Database | PostgreSQL 16 |
-| Cache / Rate Limiting | Redis 7, Bucket4j, Lettuce |
+| Cache / Rate Limiting | Redis 7, Bucket4j 8.10.1, Lettuce |
 | ORM | Spring Data JPA / Hibernate |
 | Migrations | Flyway |
 | Mapping | MapStruct 1.6.3, Lombok |
 | API Docs | SpringDoc OpenAPI 2.8.5 (Swagger UI) |
+| Resilience | Resilience4j 2.2.0 (retry, circuit breaker) |
 | Testing | JUnit 5, TestContainers 1.19.8, JaCoCo |
 | Build | Maven |
 | Containerization | Docker, Docker Compose |
-| Monitoring | Spring Boot Actuator (health, metrics, prometheus) |
-| Notifications | Spring Mail + Thymeleaf templates (SMTP/Gmail) |
+| Observability | Prometheus, Grafana, Loki, Tempo |
+| Notifications | Spring Mail + Thymeleaf templates (Mailtrap SMTP) |
 
 ## Architecture
 
@@ -76,7 +77,7 @@ Key design decisions:
 ## Modules
 
 ### Auth
-User registration, login, JWT token management, email verification, password changes, and two-factor authentication (2FA) via email. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions.
+User registration, login, JWT token management, email verification, password changes, and two-factor authentication (2FA) via email. Supports three roles: `CUSTOMER`, `ADMIN`, `BRANCH_MANAGER` with granular permissions. Refresh tokens stored in HttpOnly cookies.
 
 ### Customer
 Customer profiles linked 1:1 to users. Manages KYC (Know Your Customer) approval workflows and risk level assessment (`LOW`, `MEDIUM`, `HIGH`). Name changes automatically reset KYC status to `PENDING`.
@@ -98,19 +99,23 @@ Deposits, withdrawals, and transfers between accounts. Supports transaction stat
 These limits are domain constants (not configurable per account). Any operation that would exceed the daily or monthly accumulated total is rejected.
 
 ### Notification
-Email notifications via SMTP (Gmail). Sends verification emails on registration and welcome emails on account creation using Thymeleaf templates.
+Email notifications via Mailtrap SMTP. Sends verification emails on registration and welcome emails on account creation using Thymeleaf templates. Includes retry logic and circuit breaker patterns via Resilience4j.
 
 ### Audit
 Audit trail infrastructure (database table in place, module scaffolded).
 
 ## API Endpoints
 
-### Authentication — `/api/v1/auth/*`
+All paths are prefixed with `/api/v1`.
+
+### Authentication — `/api/v1/auth`
 
 | Method | Path | Description | Auth |
 |---|---|---|---|
 | POST | `/auth/register` | Register a new user | Public |
 | POST | `/auth/login` | Authenticate and receive JWT (or 2FA session token) | Public |
+| POST | `/auth/refresh` | Issue new access token via refresh token cookie | Public |
+| POST | `/auth/logout` | Revoke refresh token and end session | Public |
 | POST | `/auth/verify-email` | Verify email with token | Public |
 | POST | `/auth/resend-verification` | Resend verification email | Public |
 | PUT | `/auth/change-password` | Change password | Authenticated |
@@ -139,6 +144,7 @@ Audit trail infrastructure (database table in place, module scaffolded).
 | GET | `/accounts/{id}` | `ACCOUNT_VIEW_ALL` |
 | GET | `/accounts/me/{id}/balance` | `ACCOUNT_VIEW_OWN` |
 | GET | `/accounts/search?alias=...` | `ACCOUNT_VIEW_OWN` |
+| GET | `/accounts/types` | Authenticated |
 
 ### Transactions — `/api/v1/transactions` (authenticated)
 
@@ -146,7 +152,8 @@ Audit trail infrastructure (database table in place, module scaffolded).
 |---|---|---|
 | POST | `/transactions/accounts/{id}/deposits` | `TRANSACTION_DEPOSIT` |
 | POST | `/transactions/accounts/{id}/withdrawals` | `TRANSACTION_WITHDRAW` |
-| GET | `/transactions/accounts/{id}/transactions` | `TRANSACTION_VIEW_OWN` |
+| GET | `/transactions/me` | `TRANSACTION_VIEW_OWN` |
+| GET | `/transactions/accounts/{id}` | `TRANSACTION_VIEW_OWN` |
 | GET | `/transactions/{id}` | `TRANSACTION_VIEW_OWN` |
 
 ### Transfers — `/api/v1/transfers` (authenticated)
@@ -154,10 +161,35 @@ Audit trail infrastructure (database table in place, module scaffolded).
 | Method | Path | Permission |
 |---|---|---|
 | POST | `/transfers` | `TRANSACTION_TRANSFER` |
-| GET | `/transfers/me/{id}` | `TRANSACTION_VIEW_OWN` |
+| GET | `/transfers/{id}/me` | `TRANSACTION_VIEW_OWN` |
 | GET | `/transfers/{id}` | `TRANSACTION_VIEW_ALL` |
 
-Full interactive documentation available at `/swagger-ui.html` when the application is running.
+Swagger UI available at `/swagger-ui.html` when running locally with the `dev` profile.
+
+## Observability
+
+The project includes a full observability stack via Docker Compose:
+
+| Service | Purpose | URL |
+|---|---|---|
+| Prometheus | Metrics collection | `http://localhost:9090` |
+| Grafana | Dashboards and visualization | `http://localhost:3000` |
+| Loki | Log aggregation | `http://localhost:3100` |
+| Tempo | Distributed tracing (Zipkin-compatible) | `http://localhost:3200` |
+
+```
+Spring Boot App
+    ├─ Metrics (Prometheus format) → Prometheus → Grafana
+    ├─ Logs (Loki appender)        → Loki     → Grafana
+    └─ Traces (Zipkin/OTLP)        → Tempo    → Grafana
+```
+
+Pre-configured Grafana datasources and dashboards are provisioned automatically from `observability/grafana/`. The observability profile is activated automatically when using Docker Compose.
+
+Actuator endpoints are exposed on a separate management port (`9090`), isolated from the public API:
+- `/actuator/health` — system health
+- `/actuator/prometheus` — Prometheus-format metrics
+- `/actuator/circuitbreakers` — circuit breaker status
 
 ## Getting Started
 
@@ -178,11 +210,11 @@ cd core-banking-system
 cp .env.example .env
 # Edit .env with your values (see Environment Variables section)
 
-# 3. Start all services (PostgreSQL, Redis, App)
+# 3. Start all services (PostgreSQL, Redis, App + observability stack)
 docker-compose up --build
 
 # The API will be available at http://localhost:8080
-# Swagger UI at http://localhost:8080/swagger-ui.html
+# Grafana at http://localhost:3000
 ```
 
 ### Run locally
@@ -205,19 +237,24 @@ Copy `.env.example` to `.env` and configure:
 
 | Variable | Description | Example |
 |---|---|---|
+| `SPRING_PROFILES_ACTIVE` | Spring profile (`dev` or `prod`) | `dev` |
+| `APP_PORT` | Application port | `8080` |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port | `5432` |
 | `DB_NAME` | Database name | `core_banking_db` |
 | `DB_USER` | Database user | `banking_user` |
 | `DB_PASSWORD` | Database password | `your_secure_password` |
-| `DB_PORT` | Database port | `5432` |
-| `APP_PORT` | Application port | `8080` |
 | `JWT_SECRET` | JWT signing key (min 32 chars) | `openssl rand -base64 32` |
 | `JWT_EXPIRATION_MS` | Token expiry in ms | `86400000` (24h) |
+| `COOKIE_SECURE` | HTTPS-only cookies (`false` for local dev) | `true` |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` |
-| `SPRING_DATA_REDIS_HOST` | Redis host (`redis` in Docker, `localhost` locally) | `localhost` |
-| `SPRING_DATA_REDIS_PORT` | Redis port | `6379` |
-| `SPRING_DATA_REDIS_PASSWORD` | Redis password (optional) | ` ` |
-| `MAIL_USERNAME` | Gmail address for SMTP | `your@gmail.com` |
-| `MAIL_PASSWORD` | Gmail app password | `your_app_password` |
+| `REDIS_HOST` | Redis host | `localhost` |
+| `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_PASSWORD` | Redis password (optional) | |
+| `MAIL_HOST` | SMTP host | `sandbox.smtp.mailtrap.io` |
+| `MAIL_PORT` | SMTP port | `2525` |
+| `MAIL_USERNAME` | Mailtrap SMTP username | `your_username` |
+| `MAIL_PASSWORD` | Mailtrap SMTP password | `your_password` |
 
 ## Database Migrations
 
@@ -225,29 +262,32 @@ Migrations are managed by Flyway and run automatically on startup. Files are loc
 
 | Migration | Description |
 |---|---|
-| V1 | Consolidated initial schema (users, roles, permissions, customers, accounts, transactions, transfers, audit_logs, email_verification_tokens). Includes all structural changes from previous V1-V11 migrations. |
+| V1 | Consolidated initial schema (users, roles, permissions, customers, accounts, transactions, transfers, audit_logs, email_verification_tokens) |
 | V2 | Seed initial data (default roles: CUSTOMER, ADMIN, BRANCH_MANAGER and their associated permissions) |
-
-The migrations have been consolidated for production deployment. Previous incremental migrations (V1-V11) are now unified into these two scripts.
 
 ## Testing
 
+The project uses Maven profiles to separate fast unit tests from slow integration tests (TestContainers):
+
 ```bash
-# Run all tests
-mvn test
+# Run ONLY unit tests (default, fast)
+mvn clean verify
+
+# Run ONLY integration tests (uses TestContainers + PostgreSQL)
+mvn clean verify -Pintegration-tests
+
+# Run ALL tests (unit + integration)
+mvn clean verify -Pall-tests
 
 # Run with coverage report
 mvn test jacoco:report
 # Report at target/site/jacoco/index.html
 
-# Run unit + integration tests
-mvn verify
-
 # Run a specific test class
 mvn test -Dtest=CustomerTest
 
-# Run a specific test method
-mvn test -Dtest=CustomerTest#shouldCreateCustomer
+# Run a specific integration test
+mvn verify -Pintegration-tests -Dit.test=CustomerServiceIT
 ```
 
 - **Unit tests** (`*Test.java`): Domain models, value objects, application services
@@ -265,14 +305,23 @@ core-banking-system/
 │   │   │   ├── customer/          # Customer management & KYC
 │   │   │   ├── account/           # Bank account operations
 │   │   │   ├── transaction/       # Deposits, withdrawals, transfers
-│   │   │   ├── notification/      # Email notifications
+│   │   │   ├── notification/      # Email notifications (Thymeleaf)
 │   │   │   ├── audit/             # Audit trail
 │   │   │   └── common/            # Shared value objects & exceptions
 │   │   └── resources/
-│   │       ├── application.yml
-│   │       └── db/migration/      # Flyway SQL migrations (V1-V2)
-│   └── test/java/                 # Unit & integration tests
-├── docs/                          # ADRs, DB models, domain invariants
+│   │       ├── application.yml           # Default configuration
+│   │       ├── application-dev.yml       # Development profile
+│   │       ├── application-prod.yml      # Production profile
+│   │       ├── db/migration/             # Flyway SQL migrations
+│   │       └── templates/                # Thymeleaf email templates
+│   └── test/                      # Unit & integration tests
+├── observability/                 # Prometheus, Loki, Tempo, Grafana configs
+│   ├── prometheus/prometheus.yml
+│   ├── loki/loki-config.yml
+│   ├── tempo/tempo.yml
+│   └── grafana/                   # Datasources, dashboards
+├── postman/                       # Postman collection for API testing
+├── docs/                          # ADRs and domain invariants
 ├── docker-compose.yml
 ├── Dockerfile                     # Multi-stage build (JDK 21 → JRE 21)
 └── pom.xml
