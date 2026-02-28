@@ -5,6 +5,7 @@ import com.banking.system.common.domain.dto.PagedResult;
 import com.banking.system.common.infraestructure.mapper.PageMapper;
 import com.banking.system.transaction.domain.model.Transaction;
 import com.banking.system.transaction.domain.model.TransactionStatus;
+import com.banking.system.transaction.domain.model.TransactionType;
 import com.banking.system.transaction.domain.port.out.TransactionRepositoryPort;
 import com.banking.system.transaction.infraestructure.adapter.out.mapper.TransactionJpaEntityMapper;
 import com.banking.system.transaction.infraestructure.adapter.out.persistence.entity.TransactionJpaEntity;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -96,5 +99,10 @@ public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
         var page = transactionJpaRepository.findAllByAccountIdInAndStatus(accountIds, status, pageable);
 
         return PageMapper.toPagedResult(page, TransactionJpaEntityMapper::toDomainEntity);
+    }
+
+    @Override
+    public BigDecimal sumCompletedAmountByAccountIdAndTypeSince(UUID accountId, TransactionType type, Instant since) {
+        return transactionJpaRepository.sumCompletedAmountByAccountIdAndTypeSince(accountId, type, since);
     }
 }

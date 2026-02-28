@@ -169,6 +169,8 @@ public class Account {
             AccountNumber accountNumber,
             AccountAlias alias) {
 
+        AccountLimits limits = AccountLimits.forType(accountType);
+
         return new Account(
                 null, // id - assigned by persistence
                 customerId,
@@ -179,8 +181,8 @@ public class Account {
                 AccountStatus.ACTIVE,
                 Money.zero(currency),
                 Money.zero(currency),
-                Money.of(AccountLimits.DEFAULT_DAILY_TRANSFER, currency),
-                Money.of(AccountLimits.DEFAULT_MONTHLY_TRANSFER, currency),
+                Money.of(limits.dailyTransferLimit(), currency),
+                Money.of(limits.monthlyTransferLimit(), currency),
                 LocalDate.now(),
                 null,
                 Instant.now()

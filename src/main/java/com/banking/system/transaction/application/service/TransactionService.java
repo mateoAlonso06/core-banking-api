@@ -2,6 +2,7 @@ package com.banking.system.transaction.application.service;
 
 import com.banking.system.account.domain.exception.AccountNotFoundException;
 import com.banking.system.account.domain.model.Account;
+import com.banking.system.account.domain.model.AccountLimits;
 import com.banking.system.account.domain.port.out.AccountRepositoryPort;
 import com.banking.system.common.domain.Money;
 import com.banking.system.common.domain.MoneyCurrency;
@@ -17,8 +18,10 @@ import com.banking.system.transaction.application.dto.result.TransactionResult;
 import com.banking.system.transaction.application.mapper.ReceiptMapper;
 import com.banking.system.transaction.application.mapper.TransactionDomainMapper;
 import com.banking.system.transaction.application.usecase.*;
+import com.banking.system.transaction.domain.exception.DailyLimitExceededException;
 import com.banking.system.transaction.domain.exception.InvalidTransactionException;
 import com.banking.system.transaction.domain.exception.KycNotApprovedException;
+import com.banking.system.transaction.domain.exception.MonthlyLimitExceededException;
 import com.banking.system.transaction.domain.exception.alreadyexist.TransactionAlreadyExistException;
 import com.banking.system.transaction.domain.exception.denied.AccountAccessDeniedException;
 import com.banking.system.transaction.domain.exception.notfound.TransactionNotFoundException;
@@ -30,6 +33,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,6 +67,8 @@ public class TransactionService implements
         checkIdempotency(idempotencyKey);
 
         Account account = getAuthorizedAccount(accountId, userId);
+
+        validateTransactionLimits(account, depositAmount.getValue(), TransactionType.DEPOSIT);
 
         // Calculate balance after the operation BEFORE modifying the account
         Money balanceAfter = account.getBalance().add(depositAmount);
@@ -116,6 +125,8 @@ public class TransactionService implements
         checkIdempotency(idempotencyKey);
 
         Account account = getAuthorizedAccount(accountId, userId);
+
+        validateTransactionLimits(account, withdrawAmount.getValue(), TransactionType.WITHDRAWAL);
 
         // Calculate balance after the operation BEFORE modifying the account
         Money balanceAfter = account.getBalance().subtract(withdrawAmount);
@@ -220,6 +231,30 @@ public class TransactionService implements
             throw new KycNotApprovedException("KYC not approved for the customer");
         }
         return account;
+    }
+
+    private void validateTransactionLimits(Account account, BigDecimal amount, TransactionType type) {
+        AccountLimits limits = AccountLimits.forType(account.getAccountType());
+
+        // If is not a deposit is a withdrawal, so we need to check the limits for the type of transaction
+        BigDecimal dailyLimit = (type == TransactionType.DEPOSIT)
+                ? limits.dailyDepositLimit() : limits.dailyWithdrawalLimit();
+        BigDecimal monthlyLimit = (type == TransactionType.DEPOSIT)
+                ? limits.monthlyDepositLimit() : limits.monthlyWithdrawalLimit();
+
+        Instant startOfDay = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+        BigDecimal todayTotal = transactionRepositoryPort
+                .sumCompletedAmountByAccountIdAndTypeSince(account.getId(), type, startOfDay);
+        if (todayTotal.add(amount).compareTo(dailyLimit) > 0) {
+            throw new DailyLimitExceededException(dailyLimit, todayTotal, amount);
+        }
+
+        Instant startOfMonth = YearMonth.now().atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        BigDecimal monthTotal = transactionRepositoryPort
+                .sumCompletedAmountByAccountIdAndTypeSince(account.getId(), type, startOfMonth);
+        if (monthTotal.add(amount).compareTo(monthlyLimit) > 0) {
+            throw new MonthlyLimitExceededException(monthlyLimit, monthTotal, amount);
+        }
     }
 
     private void checkIdempotency(IdempotencyKey idempotencyKey) {

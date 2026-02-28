@@ -87,6 +87,16 @@ Bank account creation and management. Generates 22-digit account numbers and use
 ### Transaction
 Deposits, withdrawals, and transfers between accounts. Supports transaction statuses (`PENDING`, `COMPLETED`, `FAILED`, `REVERSED`), fee tracking, transfer categories, and reversal capabilities. Lookup by account alias or account number.
 
+**Deposit & withdrawal limits by account type:**
+
+| Type | Daily Deposit | Monthly Deposit | Daily Withdrawal | Monthly Withdrawal |
+|---|---|---|---|---|
+| SAVINGS | 500,000.00 | 5,000,000.00 | 200,000.00 | 2,000,000.00 |
+| CHECKING | 1,000,000.00 | 10,000,000.00 | 500,000.00 | 5,000,000.00 |
+| INVESTMENT | 2,000,000.00 | 20,000,000.00 | 1,000,000.00 | 10,000,000.00 |
+
+These limits are domain constants (not configurable per account). Any operation that would exceed the daily or monthly accumulated total is rejected.
+
 ### Notification
 Email notifications via SMTP (Gmail). Sends verification emails on registration and welcome emails on account creation using Thymeleaf templates.
 
