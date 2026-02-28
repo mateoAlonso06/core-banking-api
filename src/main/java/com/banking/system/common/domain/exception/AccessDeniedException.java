@@ -7,7 +7,13 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class AccessDeniedException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "ACCESS_DENIED";
+
     protected AccessDeniedException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
+    }
+
+    protected AccessDeniedException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

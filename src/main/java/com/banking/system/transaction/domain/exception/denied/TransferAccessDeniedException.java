@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.AccessDeniedException;
 
 public class TransferAccessDeniedException extends AccessDeniedException {
     public TransferAccessDeniedException(String message) {
-        super(message);
+        super(message, "TRANSFER_ACCESS_DENIED");
     }
 }

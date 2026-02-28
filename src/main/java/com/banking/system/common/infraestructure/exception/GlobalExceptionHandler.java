@@ -80,7 +80,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_RESOURCE_NOT_FOUND);
-        return buildResponse(HttpStatus.NOT_FOUND, "Not Found", message);
+        return buildResponse(HttpStatus.NOT_FOUND, "Not Found", message, ex.getErrorCode());
     }
 
     /**
@@ -94,7 +94,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_RESOURCE_CONFLICT);
-        return buildResponse(HttpStatus.CONFLICT, "Conflict", message);
+        return buildResponse(HttpStatus.CONFLICT, "Conflict", message, ex.getErrorCode());
     }
 
     /**
@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
 
         // Always use generic message - don't reveal if user exists or password is wrong
         String message = sanitizeMessage(ex.getMessage(), MSG_AUTH_FAILED);
-        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", message);
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", message, ex.getErrorCode());
     }
 
     /**
@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_ACCESS_DENIED);
-        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", message);
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", message, ex.getErrorCode());
     }
 
     /**
@@ -139,7 +139,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_ACCESS_DENIED);
-        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", message);
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", message, "ACCESS_DENIED");
     }
 
     /**
@@ -153,7 +153,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_BUSINESS_RULE);
-        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", message);
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Unprocessable Entity", message, ex.getErrorCode());
     }
 
     /**
@@ -167,7 +167,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage(), ex);
 
         // Always generic - infrastructure details are highly sensitive
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", MSG_INTERNAL_ERROR);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", MSG_INTERNAL_ERROR, ex.getErrorCode());
     }
 
     /**
@@ -196,12 +196,12 @@ public class GlobalExceptionHandler {
                     .distinct()
                     .toList();
             String message = MSG_VALIDATION_FAILED + ": " + String.join(", ", fieldNames);
-            return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message);
+            return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message, "VALIDATION_FAILED");
         }
 
         // In dev: show full details for easier debugging
         String message = String.join("; ", detailedErrors);
-        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message, "VALIDATION_FAILED");
     }
 
     /**
@@ -215,7 +215,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_INVALID_ARGUMENT);
-        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message, "INVALID_ARGUMENT");
     }
 
     /**
@@ -229,7 +229,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_INVALID_STATE);
-        return buildResponse(HttpStatus.CONFLICT, "Conflict", message);
+        return buildResponse(HttpStatus.CONFLICT, "Conflict", message, "INVALID_STATE");
     }
 
     /**
@@ -253,7 +253,7 @@ public class GlobalExceptionHandler {
 
         // NEVER expose internal exception messages in production
         String message = sanitizeMessage(ex.getMessage(), MSG_INTERNAL_ERROR);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", message);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", message, "INTERNAL_ERROR");
     }
 
     /**
@@ -267,7 +267,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_ACCOUNT_LOCKED);
-        return buildResponse(HttpStatus.LOCKED, "Locked", message);
+        return buildResponse(HttpStatus.LOCKED, "Locked", message, ex.getErrorCode());
     }
 
     /**
@@ -283,7 +283,7 @@ public class GlobalExceptionHandler {
                 MDC.get("correlationId"), ex.getMessage());
 
         String message = sanitizeMessage(ex.getMessage(), MSG_RATE_LIMIT_EXCEEDED);
-        return buildResponse(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", message);
+        return buildResponse(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", message, "EMAIL_RATE_LIMIT_EXCEEDED");
     }
 
     /**
@@ -293,12 +293,16 @@ public class GlobalExceptionHandler {
      * - Developers to find the exact request in logs
      * - Security team to trace suspicious activity
      */
-    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String error, String message) {
+    private ResponseEntity<Map<String, Object>> buildResponse(
+            HttpStatus status, String error, String message, String errorCode) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now().toString());
         body.put("status", status.value());
         body.put("error", error);
         body.put("message", message);
+        if (errorCode != null) {
+            body.put("errorCode", errorCode);
+        }
 
         // Include correlation ID if available (set by CorrelationIdFilter)
         String correlationId = MDC.get("correlationId");

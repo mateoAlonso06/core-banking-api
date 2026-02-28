@@ -7,7 +7,13 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class ResourceAlreadyExistsException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "RESOURCE_ALREADY_EXISTS";
+
     protected ResourceAlreadyExistsException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
+    }
+
+    protected ResourceAlreadyExistsException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

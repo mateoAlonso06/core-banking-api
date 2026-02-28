@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.BusinessRuleException;
 
 public class KycNotApprovedException extends BusinessRuleException {
     public KycNotApprovedException(String message) {
-        super(message);
+        super(message, "KYC_NOT_APPROVED");
     }
 }

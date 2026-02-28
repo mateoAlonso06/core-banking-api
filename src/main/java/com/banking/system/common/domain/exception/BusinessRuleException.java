@@ -7,7 +7,13 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class BusinessRuleException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "BUSINESS_RULE_VIOLATION";
+
     protected BusinessRuleException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
+    }
+
+    protected BusinessRuleException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

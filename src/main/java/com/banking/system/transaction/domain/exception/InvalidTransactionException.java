@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.BusinessRuleException;
 
 public class InvalidTransactionException extends BusinessRuleException {
     public InvalidTransactionException(String message) {
-        super(message);
+        super(message, "INVALID_TRANSACTION");
     }
 }

@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.BusinessRuleException;
 
 public class TransferCurrencyMismatchException extends BusinessRuleException {
     public TransferCurrencyMismatchException(String message) {
-        super(message);
+        super(message, "TRANSFER_CURRENCY_MISMATCH");
     }
 }

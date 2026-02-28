@@ -10,6 +10,6 @@ public class InsufficientFundsException extends BusinessRuleException {
         super(String.format(
                 "Insufficient funds in account %s: requested %s but only %s available",
                 accountId, requested, available
-        ));
+        ), "INSUFFICIENT_FUNDS");
     }
 }

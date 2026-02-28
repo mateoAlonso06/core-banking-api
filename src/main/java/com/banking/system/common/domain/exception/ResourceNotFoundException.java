@@ -7,7 +7,13 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class ResourceNotFoundException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "RESOURCE_NOT_FOUND";
+
     protected ResourceNotFoundException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
+    }
+
+    protected ResourceNotFoundException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

@@ -10,6 +10,6 @@ public class MonthlyLimitExceededException extends BusinessRuleException {
         super(String.format(
                 "Monthly limit exceeded: limit=%s, accumulated this month=%s, attempted=%s",
                 limit.toPlainString(), accumulated.toPlainString(), attempted.toPlainString()
-        ));
+        ), "MONTHLY_LIMIT_EXCEEDED");
     }
 }

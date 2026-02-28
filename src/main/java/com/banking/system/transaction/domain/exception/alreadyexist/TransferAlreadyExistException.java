@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.ResourceAlreadyExistsException
 
 public class TransferAlreadyExistException extends ResourceAlreadyExistsException {
     public TransferAlreadyExistException(String message) {
-        super(message);
+        super(message, "TRANSFER_ALREADY_EXISTS");
     }
 }

@@ -7,8 +7,10 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class InfrastructureException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "INTERNAL_ERROR";
+
     protected InfrastructureException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
     }
 
     protected InfrastructureException(String message, Throwable cause) {

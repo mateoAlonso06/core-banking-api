@@ -10,6 +10,6 @@ public class DailyLimitExceededException extends BusinessRuleException {
         super(String.format(
                 "Daily limit exceeded: limit=%s, accumulated today=%s, attempted=%s",
                 limit.toPlainString(), accumulated.toPlainString(), attempted.toPlainString()
-        ));
+        ), "DAILY_LIMIT_EXCEEDED");
     }
 }

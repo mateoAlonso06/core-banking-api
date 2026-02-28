@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.BusinessRuleException;
 
 public class InvalidAmountException extends BusinessRuleException {
     public InvalidAmountException(String message) {
-        super(message);
+        super(message, "INVALID_AMOUNT");
     }
 }

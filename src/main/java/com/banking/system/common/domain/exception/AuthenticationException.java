@@ -7,7 +7,13 @@ package com.banking.system.common.domain.exception;
  */
 public abstract class AuthenticationException extends DomainException {
 
+    private static final String DEFAULT_ERROR_CODE = "AUTHENTICATION_FAILED";
+
     protected AuthenticationException(String message) {
-        super(message);
+        super(message, DEFAULT_ERROR_CODE);
+    }
+
+    protected AuthenticationException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

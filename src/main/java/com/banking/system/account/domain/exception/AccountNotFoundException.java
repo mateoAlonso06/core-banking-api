@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.ResourceNotFoundException;
 
 public class AccountNotFoundException extends ResourceNotFoundException {
     public AccountNotFoundException(String message) {
-        super(message);
+        super(message, "ACCOUNT_NOT_FOUND");
     }
 }

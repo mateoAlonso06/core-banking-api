@@ -4,6 +4,6 @@ import com.banking.system.common.domain.exception.ResourceNotFoundException;
 
 public class TransferNotFoundException extends ResourceNotFoundException {
     public TransferNotFoundException(String message) {
-        super(message);
+        super(message, "TRANSFER_NOT_FOUND");
     }
 }
